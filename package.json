@@ -1,0 +1,21 @@
+{
+  "name": "ask_bot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "OPENAI_API_KEY=dummy node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "client": "npm run dev --prefix client",
+    "server": "npm run dev --prefix server",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "build": "npm run build --prefix client",
+    "start": "npm run start --prefix server"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/christianstirling/ask-bot.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

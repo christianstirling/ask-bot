@@ -1,0 +1,11 @@
+.MessageContainer {
+    /* border: 1px lightgreen dotted; */
+
+    width: 95%;
+    height: auto;
+    flex-grow: 1;
+
+    margin-top: 10px;
+
+    overflow-y: scroll;
+}

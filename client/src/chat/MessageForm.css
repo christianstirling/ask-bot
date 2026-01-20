@@ -1,0 +1,52 @@
+.MessageForm, .MessageForm * {
+    margin: 0;
+    padding: 0;
+}
+
+.MessageForm {
+    width: 100%;
+    /* border: 1px red solid; */
+
+    margin-bottom: 10px;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 5px;  
+    margin-right: 5px;
+    
+}
+
+.message_input {
+    margin-left: 5px;
+    padding: 5px;
+    width: 75%;
+    border-radius: 5px;
+    border: 1px solid lightgray;
+}
+
+.message_input:focus {
+    outline: none;
+    border-color: rgb(0, 152, 203);
+}
+
+.message_submit {
+    margin-right: 5px;
+    width: auto;
+    flex-grow: 1;
+    border-radius: 5px;
+    height: 30px;
+
+    background-color: black;
+    border: 1px solid lightgray;
+}
+
+.message_submit:hover {
+    border-color: rgb(0, 152, 203);
+}
+
+
+.message-submit:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
