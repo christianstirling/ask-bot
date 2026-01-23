@@ -1,6 +1,6 @@
 import { useState } from "react";
 import "./App.css";
-import { Chat } from "./chat/Chat.jsx";
+import Chat from "./chat/Chat.jsx";
 
 function App() {
   const [messages, setMessages] = useState([]);
@@ -16,12 +16,20 @@ function App() {
       content: trimmed,
     };
 
+    console.log("user message: " + userMessage.content);
+
     setMessages((prev) => [...prev, userMessage]);
 
     const history = [...messages, userMessage].map((m) => ({
       role: m.role,
       content: m.content,
     }));
+
+    console.log("message history:");
+    for (let h of history) {
+      console.log(h.content);
+      console.log("----");
+    }
 
     try {
       setIsLoading(true);
@@ -41,13 +49,12 @@ function App() {
         throw new Error(`Request failed with status ${res.status}`);
       }
 
-      const data = await res.json();
-      const assistantText = data.assistantContent;
+      const response = await res.json();
 
       const assistantMessage = {
         id: Date.now() + 1,
         role: "assistant",
-        content: assistantText,
+        content: response,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);

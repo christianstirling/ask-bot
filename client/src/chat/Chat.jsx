@@ -1,5 +1,4 @@
 import "./Chat.css";
-import React, { useState } from "react";
 import MessageContainer from "./MessageContainer";
 import MessageForm from "./MessageForm";
 
