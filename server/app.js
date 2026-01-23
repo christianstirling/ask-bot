@@ -31,7 +31,7 @@ const chat = async function (message, history = "", model) {
     message: message,
   });
 
-  return response.content;
+  return { message: response.content };
 };
 
 // Router set up
@@ -47,7 +47,7 @@ router.post("/", async (req, res) => {
     const history = req.body.history;
 
     const response = await chat(message, history, model);
-    console.log("AI message: " + response);
+    console.log("AI message: " + response.message);
 
     res.json(response);
   } catch (err) {

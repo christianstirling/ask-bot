@@ -18,17 +18,20 @@ function App() {
 
     console.log("user message: " + userMessage.content);
 
-    setMessages((prev) => [...prev, userMessage]);
+    const nextMessages = [...messages, userMessage];
+    setMessages(nextMessages);
+    //   role: m.role,
+    //   content: m.content,
+    // }));
 
-    const history = [...messages, userMessage].map((m) => ({
-      role: m.role,
-      content: m.content,
+    const history = nextMessages.map(({ role, content }) => ({
+      role,
+      content,
     }));
 
     console.log("message history:");
     for (let h of history) {
       console.log(h.content);
-      console.log("----");
     }
 
     try {
@@ -49,12 +52,14 @@ function App() {
         throw new Error(`Request failed with status ${res.status}`);
       }
 
-      const response = await res.json();
+      const data = await res.json().catch(() => ({}));
+
+      console.log("ai message: " + data.message);
 
       const assistantMessage = {
         id: Date.now() + 1,
         role: "assistant",
-        content: response,
+        content: data.message,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
