@@ -11,12 +11,13 @@ function App() {
     if (!trimmed) return;
 
     const userMessage = {
-      id: Date.now(),
+      id: crypto.randomUUID(),
       role: "user",
       content: trimmed,
     };
 
-    console.log("user message: " + userMessage.content);
+    console.log("USER MESSAGE: " + userMessage.content);
+    console.log("USER MSG ID: " + userMessage.id);
 
     const nextMessages = [...messages, userMessage];
     setMessages(nextMessages);
@@ -29,7 +30,7 @@ function App() {
       content,
     }));
 
-    console.log("message history:");
+    console.log("HISTORY:");
     for (let h of history) {
       console.log(h.content);
     }
@@ -54,13 +55,14 @@ function App() {
 
       const data = await res.json().catch(() => ({}));
 
-      console.log("ai message: " + data.message);
-
       const assistantMessage = {
-        id: Date.now() + 1,
+        id: crypto.randomUUID() + 1,
         role: "assistant",
         content: data.message,
       };
+
+      console.log("AI MESSAGE: " + assistantMessage.content);
+      console.log("AI MSG ID: " + assistantMessage.id);
 
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (err) {
