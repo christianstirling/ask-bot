@@ -49,11 +49,13 @@ function App() {
         }),
       });
 
-      if (!res.ok) {
-        throw new Error(`Request failed with status ${res.status}`);
-      }
-
       const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(
+          data?.error || `Request failed with status ${res.status}`,
+        );
+      }
 
       const assistantMessage = {
         id: crypto.randomUUID() + 1,
