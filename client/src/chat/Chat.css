@@ -2,8 +2,8 @@
     /* border: 1px dotted lightblue; */
     border-radius: 5px;
 
-    width: 400px;
-    height: 95%;
+    width: 600px;
+    height: 600px;
 
     display: flex;
     flex-direction: column;
