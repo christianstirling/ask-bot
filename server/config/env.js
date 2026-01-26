@@ -16,6 +16,9 @@ const env = {
   EMBEDDING_MODEL: process.env.EMBEDDING_MODEL || "text-embedding-3-small",
 
   CHROMA_URL: process.env.CHROMA_URL || "http://localhost:8000",
+  CLIENT_URL: process.env.CLIENT_URL || "http://localhost:5173",
+
+  SERVER_PORT: process.env.SERVER_PORT || 3000,
 };
 
 export default env;
