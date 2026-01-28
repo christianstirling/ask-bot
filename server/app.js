@@ -18,8 +18,18 @@ app.use(express.json());
 import openaiRouter from "./routes/openai.js";
 app.use("/api/chat", openaiRouter);
 
+import ingestRouter from "./routes/ingest.js";
+app.use("/api/ingest", ingestRouter);
+
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).json({ error: "Internal Server Error" });
+});
+
 // Sets server listening port
 const PORT = env.SERVER_PORT;
 app.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
+  console.log(`Client: ${env.CLIENT_URL}`);
+  console.log(`Server: http://localhost:${PORT}`);
+  console.log(`Chroma: ${env.CHROMA_URL}`);
 });

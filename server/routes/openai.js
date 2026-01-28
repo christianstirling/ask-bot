@@ -20,10 +20,10 @@ router.post("/", async (req, res) => {
         .json({ error: "message must be a non-empty string" });
     }
 
-    const response = await chat(message, history, chatModel);
-    console.log("AI message: " + response);
+    const responseMessage = await chat(message, history, chatModel);
+    console.log("AI message: " + responseMessage);
 
-    return res.json({ message: response });
+    return res.json({ message: responseMessage });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: "Server error" });
