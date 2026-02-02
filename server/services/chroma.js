@@ -4,7 +4,8 @@
 
 import env from "../config/env.js";
 const API_PREFIX = env.CHROMA_API_PREFIX || "/api/v2";
-let cachedCollectionId = null;
+
+let collectionIdCache = new Map();
 
 // ------------ PART 1: Internal functions ------------
 
@@ -30,7 +31,8 @@ async function chromaFetch(path, { method = "GET", body } = {}) {
   console.log("START chromaFetch");
   console.log("PARAMETERS INCLUDE:");
   console.log(`path -> ${path}`);
-  console.log(`method info -> method: ${method}, body: ${body}`);
+  console.log(`method info -> method: ${method}, body:`);
+  console.log(body);
 
   console.log(
     "CALLING buildUrl IN services/chroma FROM chromaFetch IN services/chroma",
@@ -38,6 +40,7 @@ async function chromaFetch(path, { method = "GET", body } = {}) {
   const url = buildUrl(path);
   console.log("RETURN url FROM. buildUrl");
 
+  console.log(`RUNNING fetch TO: ${url}, method: ${method}`);
   const res = await fetch(url, {
     method,
     headers: {
@@ -46,6 +49,8 @@ async function chromaFetch(path, { method = "GET", body } = {}) {
     body: body ? JSON.stringify(body) : undefined,
   });
 
+  console.log("CHECKING response:");
+  console.log(res);
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new Error(
@@ -53,6 +58,7 @@ async function chromaFetch(path, { method = "GET", body } = {}) {
     );
   }
 
+  console.log("RETURN response");
   const contentType = res.headers.get("content-type") || "";
   if (contentType.includes("application/json")) return res.json();
   return res.text();
@@ -67,30 +73,48 @@ export async function heartbeat() {
 export async function getOrCreateCollectionId() {
   console.log("START getOrCreateCollectionId");
   console.log("WILL EITHER FIND COLLECTION ID OR MAKE ONE");
-  // if we've already found it then return what we already have cached
-  if (cachedCollectionId) return cachedCollectionId;
 
   // upload the tenant, db, and collection name from env
   const { tenant, database, collection } = getScope();
 
+  // if we've already found it then return what we already have cached
+  const cacheKey = `${tenant}::${database}::${collection}`;
+  const cached = collectionIdCache.get(cacheKey);
+  if (cached) return cached;
+
   // build the base of the 'path'
   const basePath = `/tenants/${tenant}/databases/${database}/collections`;
 
+  console.log("CALLING chromaFetch IN services/chroma FROM getOrCreate");
   // run chromaFetch to list all collections
-  const collections = await chromaFetch(basePath, { method: "GET" });
+  const raw = await chromaFetch(basePath, { method: "GET" });
+
+  const list = Array.isArray(raw)
+    ? raw
+    : Array.isArray(raw?.data)
+      ? raw.data
+      : Array.isArray(raw?.collections)
+        ? raw.collections
+        : [];
+
+  console.log("List (returned from ChromaFetch:");
+  console.log(list);
 
   // search the list of collections to find one with the name we are looking for
-  const existing = Array.isArray(collections)
-    ? collections.find((c) => c?.name === collectionName)
-    : null;
+  const existing = list.find((c) => c?.name === collection);
 
+  console.log("existing:");
+  console.log(existing);
   // if we found it (as an already existing collection), return what we found
   if (existing?.id) {
-    cachedCollectionId = existing.id;
-    return cachedCollectionId;
+    console.log("Collection exists! using id from existing collection!");
+    collectionIdCache.set(cacheKey, existing.id);
+    return existing.id;
   }
 
   // assuming that the collection does not already exist:
+
+  console.log("Collection does NOT exist! creating a new collection ID");
 
   // create a new collection with that name
   // should return object with the collection's id
@@ -100,8 +124,15 @@ export async function getOrCreateCollectionId() {
   });
 
   // store the created id in the cache -- return cache
-  cachedCollectionId = created.id;
-  return cachedCollectionId;
+  const id = created?.id ?? created?.collection?.id;
+  if (!id) {
+    throw new Error(
+      `Chroma create collection did not return an id: ${JSON.stringify(created)}`,
+    );
+  }
+
+  collectionIdCache.set(cacheKey, id);
+  return id;
 }
 
 export async function upsertToCollection({
@@ -138,7 +169,7 @@ export async function upsertToCollection({
     (!Array.isArray(metadatas) || metadatas.length !== ids.length)
   )
     throw new Error(
-      "upsertToColletion: metadatas must match ids length IF PROVIDED",
+      "upsertToCollection: metadatas must match ids length IF PROVIDED",
     );
 
   console.log("BUILD path USING tenant, database, collection_id");
@@ -148,6 +179,7 @@ export async function upsertToCollection({
     "CALLING chromaFetch IN services/chroma FROM upsertToCollection IN services/chroma",
   );
   console.log("WILL FINISH upsertToCollection WHEN chromaFetch RETURNS");
+
   return chromaFetch(path, {
     method: "POST",
     body: { ids, embeddings, documents, metadatas },

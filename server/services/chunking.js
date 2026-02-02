@@ -12,8 +12,8 @@
 
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 
-const DEFAULT_CHUNK_SIZE = 800;
-const DEFAULT_CHUNK_OVERLAP = 120;
+const DEFAULT_CHUNK_SIZE = 50;
+const DEFAULT_CHUNK_OVERLAP = 20;
 
 // ------------ PART 1: Internal Functions. ------------
 
@@ -30,8 +30,8 @@ export default async function chunkText(
   console.log("START chunkText");
   console.log("PARAMETERS INCLUDE:");
   console.log(`text -> ${text}`);
-  console.log(`chunkSize -> ${chunkSize}`);
-  console.log(`chunkOverlap -> ${chunkOverlap}`);
+  console.log(`chunkSize -> ${chunkSize} || ${DEFAULT_CHUNK_SIZE}`);
+  console.log(`chunkOverlap -> ${chunkOverlap} || ${DEFAULT_CHUNK_OVERLAP}`);
 
   if (typeof text !== "string" || !text.trim()) return [];
 
