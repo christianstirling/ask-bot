@@ -21,6 +21,9 @@ app.use("/api/chat", openaiRouter);
 import ingestRouter from "./routes/ingest.js";
 app.use("/api/ingest", ingestRouter);
 
+import peekRouter from "./routes/peek.js";
+app.use("api/peek", peekRouter);
+
 app.use((err, req, res, next) => {
   console.error(err);
   res.status(500).json({ error: "Internal Server Error" });

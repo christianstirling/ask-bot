@@ -185,3 +185,37 @@ export async function upsertToCollection({
     body: { ids, embeddings, documents, metadatas },
   });
 }
+
+/**
+ * =========
+ * Function used for listing the chunks in a collection
+ * =========
+ */
+
+export async function listCollectionChunks({ limit = 25, offset = 0 } = {}) {
+  const collectionId = await getOrCreateCollectionId();
+  const { tenant, database } = getScope();
+
+  const path = `/tenants/${tenant}/databases/${database}/collections/${collectionId}/get`;
+
+  const res = await chromaFetch(path, {
+    method: "POST",
+    body: {
+      limit,
+      offset,
+      include: ["documents", "metadatas", "ids"],
+    },
+  });
+
+  const ids = res?.ids ?? [];
+  const documents = res?.documents ?? [];
+  const metadatas = res?.metadatas ?? [];
+
+  const items = ids.map((id, i) => ({
+    id,
+    document: documents[i] ?? "",
+    metadata: metadatas[i] ?? "",
+  }));
+
+  return { items, limit, offset };
+}
