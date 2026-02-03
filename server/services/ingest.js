@@ -18,27 +18,15 @@ import { upsertToCollection } from "./chroma.js";
 // ------------ External Function ------------
 
 export default async function ingestText({ text, docId, metadata = {} }) {
-  console.log("STARTING ingestText");
-  console.log("PARAMETERS INCLUDE:");
-  console.log(`text -> ${text}`);
-  console.log(`docID -> ${docId}`);
-  console.log(`metadata -> ${metadata}`);
-
   if (typeof text !== "string" || !text.trim()) {
     throw new Error("ingestText: text must be a non-empty string");
   }
 
   const finalDocId = docId || crypto.randomUUID();
 
-  console.log("CALLING chunkText IN services/chunking FROM services/ingest");
   const chunks = await chunkText(text);
-  console.log("RETURNED chunks FROM chunkText:");
-  console.log(chunks);
 
-  console.log("CALLING embedDocuments IN services/llm FROM services/ingest");
   const embeddings = await embedDocuments(chunks.map((c) => c.content));
-  console.log("RETURNED embeddings FROM embedDocuments:");
-  console.log(embeddings);
 
   const ids = chunks.map((c) => `${finalDocId}:${c.index}`);
 
@@ -48,9 +36,6 @@ export default async function ingestText({ text, docId, metadata = {} }) {
     ...metadata,
   }));
 
-  console.log(
-    "CALLING upsertToCollection IN services/chroma FROM services/ingest",
-  );
   await upsertToCollection({
     ids,
     embeddings,
@@ -58,7 +43,6 @@ export default async function ingestText({ text, docId, metadata = {} }) {
     metadatas,
   });
 
-  console.log("FINISH ingestText: great success");
   return {
     docId: finalDocId,
     chunkCount: chunks.length,

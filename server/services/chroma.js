@@ -15,7 +15,7 @@ function buildUrl(path) {
   return `${base}${prefix}${path}`;
 }
 
-function getScope() {
+export function getScope() {
   const tenant = env.CHROMA_TENANT;
   const database = env.CHROMA_DATABASE;
   const collection = env.CHROMA_COLLECTION;
@@ -27,20 +27,15 @@ function getScope() {
   return { tenant, database, collection };
 }
 
-async function chromaFetch(path, { method = "GET", body } = {}) {
+export async function chromaFetch(path, { method = "GET", body } = {}) {
   console.log("START chromaFetch");
   console.log("PARAMETERS INCLUDE:");
   console.log(`path -> ${path}`);
-  console.log(`method info -> method: ${method}, body:`);
+  console.log(`method -> ${method}, body:`);
   console.log(body);
 
-  console.log(
-    "CALLING buildUrl IN services/chroma FROM chromaFetch IN services/chroma",
-  );
   const url = buildUrl(path);
-  console.log("RETURN url FROM. buildUrl");
 
-  console.log(`RUNNING fetch TO: ${url}, method: ${method}`);
   const res = await fetch(url, {
     method,
     headers: {
@@ -49,7 +44,6 @@ async function chromaFetch(path, { method = "GET", body } = {}) {
     body: body ? JSON.stringify(body) : undefined,
   });
 
-  console.log("CHECKING response:");
   console.log(res);
   if (!res.ok) {
     const text = await res.text().catch(() => "");
@@ -58,7 +52,6 @@ async function chromaFetch(path, { method = "GET", body } = {}) {
     );
   }
 
-  console.log("RETURN response");
   const contentType = res.headers.get("content-type") || "";
   if (contentType.includes("application/json")) return res.json();
   return res.text();
@@ -71,9 +64,6 @@ export async function heartbeat() {
 }
 
 export async function getOrCreateCollectionId() {
-  console.log("START getOrCreateCollectionId");
-  console.log("WILL EITHER FIND COLLECTION ID OR MAKE ONE");
-
   // upload the tenant, db, and collection name from env
   const { tenant, database, collection } = getScope();
 
@@ -85,7 +75,6 @@ export async function getOrCreateCollectionId() {
   // build the base of the 'path'
   const basePath = `/tenants/${tenant}/databases/${database}/collections`;
 
-  console.log("CALLING chromaFetch IN services/chroma FROM getOrCreate");
   // run chromaFetch to list all collections
   const raw = await chromaFetch(basePath, { method: "GET" });
 
@@ -97,24 +86,16 @@ export async function getOrCreateCollectionId() {
         ? raw.collections
         : [];
 
-  console.log("List (returned from ChromaFetch:");
-  console.log(list);
-
   // search the list of collections to find one with the name we are looking for
   const existing = list.find((c) => c?.name === collection);
 
-  console.log("existing:");
-  console.log(existing);
   // if we found it (as an already existing collection), return what we found
   if (existing?.id) {
-    console.log("Collection exists! using id from existing collection!");
     collectionIdCache.set(cacheKey, existing.id);
     return existing.id;
   }
 
   // assuming that the collection does not already exist:
-
-  console.log("Collection does NOT exist! creating a new collection ID");
 
   // create a new collection with that name
   // should return object with the collection's id
@@ -142,21 +123,9 @@ export async function upsertToCollection({
   metadatas,
   collectionId,
 } = {}) {
-  console.log("START upsertToCollection");
-  console.log("PARAMETERS INCLUDED:");
-  console.log(`ids -> ${ids}`);
-  console.log(`embeddings, documents, metadata`);
-
-  console.log("PULLING tenant, database names FROM env");
   const { tenant, database } = getScope();
 
-  console.log(
-    "CALLING getOrCreateCollectionId IN services/chroma FROM upsertToCollection IN services/chroma",
-  );
-
   const collection_id = await getOrCreateCollectionId();
-  console.log("RETURN collection_id:");
-  console.log(collection_id);
 
   if (!Array.isArray(ids) || ids.length === 0)
     throw new Error("upsertToCollection: ids required");
@@ -172,13 +141,7 @@ export async function upsertToCollection({
       "upsertToCollection: metadatas must match ids length IF PROVIDED",
     );
 
-  console.log("BUILD path USING tenant, database, collection_id");
   const path = `/tenants/${tenant}/databases/${database}/collections/${collection_id}/upsert`;
-
-  console.log(
-    "CALLING chromaFetch IN services/chroma FROM upsertToCollection IN services/chroma",
-  );
-  console.log("WILL FINISH upsertToCollection WHEN chromaFetch RETURNS");
 
   return chromaFetch(path, {
     method: "POST",
@@ -203,7 +166,7 @@ export async function listCollectionChunks({ limit = 25, offset = 0 } = {}) {
     body: {
       limit,
       offset,
-      include: ["documents", "metadatas", "ids"],
+      include: ["documents", "metadatas"],
     },
   });
 
@@ -218,4 +181,27 @@ export async function listCollectionChunks({ limit = 25, offset = 0 } = {}) {
   }));
 
   return { items, limit, offset };
+}
+
+/**
+ * =========
+ * Function used for deleting a given chunk from the collection
+ * =========
+ */
+
+export async function deleteChunkById({ id }) {
+  if (!id || typeof id !== "string") {
+    throw new Error("deleteChunkById: id (string) is required");
+  }
+
+  const collectionId = await getOrCreateCollectionId();
+  const { tenant, database } = getScope();
+  const path = `/tenants/${tenant}/databases/${database}/collections/${collectionId}/delete`;
+
+  await chromaFetch(path, {
+    method: "POST",
+    body: { ids: [id] },
+  });
+
+  return { id };
 }
