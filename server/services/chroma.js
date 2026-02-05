@@ -15,7 +15,7 @@ function buildUrl(path) {
   return `${base}${prefix}${path}`;
 }
 
-export function getScope() {
+function getScope() {
   const tenant = env.CHROMA_TENANT;
   const database = env.CHROMA_DATABASE;
   const collection = env.CHROMA_COLLECTION;
@@ -27,13 +27,14 @@ export function getScope() {
   return { tenant, database, collection };
 }
 
-export async function chromaFetch(path, { method = "GET", body } = {}) {
-  console.log("START chromaFetch");
-  console.log("PARAMETERS INCLUDE:");
-  console.log(`path -> ${path}`);
-  console.log(`method -> ${method}, body:`);
-  console.log(body);
+/**
+ * =====
+ * Helper function - called by main functions to 'fetch'
+ * responses from the given Chroma db path
+ * =====
+ */
 
+async function chromaFetch(path, { method = "GET", body } = {}) {
   const url = buildUrl(path);
 
   const res = await fetch(url, {
@@ -44,7 +45,6 @@ export async function chromaFetch(path, { method = "GET", body } = {}) {
     body: body ? JSON.stringify(body) : undefined,
   });
 
-  console.log(res);
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new Error(
@@ -63,19 +63,22 @@ export async function heartbeat() {
   return chromaFetch("/heartbeat", { method: "GET" });
 }
 
+/**
+ * =====
+ * Finds the collection id at the collection referenced in
+ * the .env file
+ * =====
+ */
+
 export async function getOrCreateCollectionId() {
-  // upload the tenant, db, and collection name from env
   const { tenant, database, collection } = getScope();
 
-  // if we've already found it then return what we already have cached
   const cacheKey = `${tenant}::${database}::${collection}`;
   const cached = collectionIdCache.get(cacheKey);
   if (cached) return cached;
 
-  // build the base of the 'path'
   const basePath = `/tenants/${tenant}/databases/${database}/collections`;
 
-  // run chromaFetch to list all collections
   const raw = await chromaFetch(basePath, { method: "GET" });
 
   const list = Array.isArray(raw)
@@ -86,25 +89,18 @@ export async function getOrCreateCollectionId() {
         ? raw.collections
         : [];
 
-  // search the list of collections to find one with the name we are looking for
   const existing = list.find((c) => c?.name === collection);
 
-  // if we found it (as an already existing collection), return what we found
   if (existing?.id) {
     collectionIdCache.set(cacheKey, existing.id);
     return existing.id;
   }
 
-  // assuming that the collection does not already exist:
-
-  // create a new collection with that name
-  // should return object with the collection's id
   const created = await chromaFetch(basePath, {
     method: "POST",
     body: { name: collection },
   });
 
-  // store the created id in the cache -- return cache
   const id = created?.id ?? created?.collection?.id;
   if (!id) {
     throw new Error(
@@ -115,6 +111,13 @@ export async function getOrCreateCollectionId() {
   collectionIdCache.set(cacheKey, id);
   return id;
 }
+
+/**
+ * =====
+ * Function used to upsert an array of chunks into the chroma
+ * database
+ * =====
+ */
 
 export async function upsertToCollection({
   ids,
@@ -150,12 +153,12 @@ export async function upsertToCollection({
 }
 
 /**
- * =========
+ * =====
  * Function used for listing the chunks in a collection
- * =========
+ * =====
  */
 
-export async function listCollectionChunks({ limit = 25, offset = 0 } = {}) {
+export async function listChunks({ limit = 25, offset = 0 } = {}) {
   const collectionId = await getOrCreateCollectionId();
   const { tenant, database } = getScope();
 
@@ -184,12 +187,12 @@ export async function listCollectionChunks({ limit = 25, offset = 0 } = {}) {
 }
 
 /**
- * =========
+ * =====
  * Function used for deleting a given chunk from the collection
- * =========
+ * =====
  */
 
-export async function deleteChunkById({ id }) {
+export async function deleteChunk({ id }) {
   if (!id || typeof id !== "string") {
     throw new Error("deleteChunkById: id (string) is required");
   }

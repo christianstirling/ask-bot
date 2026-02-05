@@ -1,6 +1,8 @@
 import { useState } from "react";
 import "./App.css";
 import Chat from "./chat/Chat.jsx";
+import Peek from "./peek/Peek.jsx";
+import Ingest from "./ingest/Ingest.jsx";
 
 function App() {
   const [messages, setMessages] = useState([]);
@@ -38,7 +40,7 @@ function App() {
     try {
       setIsLoading(true);
 
-      const res = await fetch("http://localhost:3000/api/chat", {
+      const res = await fetch("http://localhost:3001/api/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -89,6 +91,8 @@ function App() {
         isLoading={isLoading}
         onSend={handleSendMessage}
       />
+      <Ingest />
+      <Peek />
     </div>
   );
 }

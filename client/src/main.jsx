@@ -7,6 +7,6 @@ import Ingest from "./ingest/Ingest.jsx";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <Peek />
+    <App />
   </StrictMode>,
 );
