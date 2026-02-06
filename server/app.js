@@ -1,9 +1,10 @@
-// Express set up
+// server/app.js
+
 import express from "express";
 const app = express();
 
 import env from "./config/env.js";
-// Set up cors
+
 import cors from "cors";
 app.use(
   cors({
@@ -11,10 +12,8 @@ app.use(
   }),
 );
 
-// Other express set up stuff
 app.use(express.json());
 
-// Attach the router to the /api/chat route
 import openaiRouter from "./routes/openai.js";
 app.use("/api/chat", openaiRouter);
 
@@ -24,12 +23,14 @@ app.use("/api/ingest", ingestRouter);
 import peekRouter from "./routes/peek.js";
 app.use("/api/peek", peekRouter);
 
+import queryRouter from "./routes/query.js";
+app.use("/api/query", queryRouter);
+
 app.use((err, req, res, next) => {
   console.error(err);
   res.status(500).json({ error: "Internal Server Error" });
 });
 
-// Sets server listening port
 const PORT = env.SERVER_PORT;
 app.listen(PORT, () => {
   console.log(`Client: ${env.CLIENT_URL}`);

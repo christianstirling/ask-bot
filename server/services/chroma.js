@@ -146,6 +146,7 @@ export async function upsertToCollection({
 
   const path = `/tenants/${tenant}/databases/${database}/collections/${collection_id}/upsert`;
 
+  console.log({ ids, embeddings, documents, metadatas });
   return chromaFetch(path, {
     method: "POST",
     body: { ids, embeddings, documents, metadatas },
@@ -207,4 +208,58 @@ export async function deleteChunk({ id }) {
   });
 
   return { id };
+}
+
+/**
+ * =====
+ * Function that performs the query search (similarity search) on the
+ * vector database
+ * =====
+ */
+
+export async function queryCollection({
+  queryEmbeddings,
+  topK = 5,
+  where,
+  include = ["documents", "metadatas", "distances"],
+} = {}) {
+  // Send chromaFetch to
+  // path: /api/v2/tenants/default_tenant/databases/default_database/collections/{collection}/query
+  // method: POST
+
+  const { tenant, database } = getScope();
+  const collectionId = await getOrCreateCollectionId();
+
+  if (!Array.isArray(queryEmbeddings) || queryEmbeddings.length === 0) {
+    throw new Error(
+      "queryCollection: queryEmbeddings must be a non-empty array of vectors",
+    );
+  }
+
+  if (!Number.isFinite(topK) || topK <= 0) {
+    throw new Error("queryCollection: topK must be a positive number");
+  }
+
+  const allowed = new Set([
+    "documents",
+    "metadatas",
+    "distances",
+    "embeddings",
+    "uris",
+  ]);
+  const safeInclude = (Array.isArray(include) ? include : []).filter((x) =>
+    allowed.has(x),
+  );
+
+  const path = `/tenants/${tenant}/databases/${database}/collections/${collectionId}/query`;
+
+  const body = {
+    n_results: topK,
+    query_embeddings: queryEmbeddings,
+    include: safeInclude,
+  };
+
+  if (where && typeof where === "object") body.where = where;
+
+  return chromaFetch(path, { method: "POST", body });
 }
