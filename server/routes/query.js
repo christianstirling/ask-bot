@@ -109,7 +109,7 @@ router.post("/", async (req, res, next) => {
     return res.json({
       ok: true,
       answer,
-      ...answer(returnSources ? { sources } : {}),
+      ...(returnSources ? { sources } : {}),
     });
   } catch (err) {
     next(err);
