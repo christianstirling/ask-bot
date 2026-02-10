@@ -7,9 +7,9 @@ import Ingest from "./ingest/Ingest.jsx";
 function App() {
   return (
     <div>
-      <ChatContainer />
+      {/* <ChatContainer /> */}
       <Ingest />
-      {/* <Peek /> */}
+      <Peek />
     </div>
   );
 }

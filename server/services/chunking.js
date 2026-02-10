@@ -12,8 +12,8 @@
 
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 
-const DEFAULT_CHUNK_SIZE = 50;
-const DEFAULT_CHUNK_OVERLAP = 20;
+const DEFAULT_CHUNK_SIZE = 200;
+const DEFAULT_CHUNK_OVERLAP = 50;
 
 // ------------ PART 1: Internal Functions. ------------
 

@@ -71,14 +71,14 @@ export default function Ingest() {
       <div className="ingest-form-container">
         <form onSubmit={handleSubmit} className="ingest-form">
           <label htmlFor="text" className="ingest-label">
-            Ingest
+            ingest
           </label>
 
           <textarea
             id="text"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Paste raw text here... Any text that you enter here will be chunked, embedded, and then stored in the app's vector database"
+            placeholder="paste raw text here... any text that you enter here will be chunked, embedded, and then stored in the app's vector database"
             rows={16}
             spellCheck={false}
             className="ingest-textarea"
@@ -90,7 +90,7 @@ export default function Ingest() {
                 Endpoint: <code>{API_BASE_URL}/api/ingest</code>
               </div> */}
               <div>
-                Characters: <code>{trimmed.length}</code>
+                characters: <code>{trimmed.length}</code>
               </div>
             </div>
 
@@ -104,7 +104,7 @@ export default function Ingest() {
           </div>
         </form>
 
-        {error && (
+        {/* {error && (
           <div>
             <strong>Error:</strong> {error}
           </div>
@@ -131,7 +131,6 @@ export default function Ingest() {
 
               <button
                 type="button"
-                style={styles.copyButton}
                 onClick={() =>
                   navigator.clipboard.writeText(
                     JSON.stringify(response, null, 2),
@@ -144,7 +143,7 @@ export default function Ingest() {
 
             <pre>{JSON.stringify(response, null, 2)}</pre>
           </div>
-        )}
+        )} */}
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import "./Peek.css";
 
 /**
  * ChromaChunkList
@@ -50,8 +51,8 @@ export default function ChromaChunkList() {
   }
 
   async function deleteChunk(id) {
-    const ok = window.confirm("Delete this chunk? This cannot be undone.");
-    if (!ok) return;
+    // const ok = window.confirm("Delete this chunk? This cannot be undone.");
+    // if (!ok) return;
 
     setDeletingId(id);
     setError("");
@@ -112,18 +113,22 @@ export default function ChromaChunkList() {
 
   return (
     <div className="Peek">
-      <div style={s.headerRow}>
-        <div>
-          <h3 style={s.h3}>Chroma chunks</h3>
-          <div style={s.subtle}>
+      <div className="peek-container">
+        <div className="peek-header-container">
+          <h3 className="peek-header">peek</h3>
+          {/* <div style={s.subtle}>
             Endpoint: <code>{API_BASE_URL}/api/peek</code>
-          </div>
+          </div> */}
         </div>
 
-        <div style={s.controls}>
-          <label style={s.label}>
+        <div className="peek-controls">
+          <label className="peek-pagesize-label">
             page size{" "}
-            <select value={limit} onChange={onChangeLimit} style={s.select}>
+            <select
+              value={limit}
+              onChange={onChangeLimit}
+              className="peek-pagesize-select"
+            >
               <option value={10}>10</option>
               <option value={25}>25</option>
               <option value={50}>50</option>
@@ -133,201 +138,217 @@ export default function ChromaChunkList() {
           <button
             onClick={() => loadPage(offset)}
             disabled={loading}
-            style={s.ghostBtn}
+            className="peek-refresh-button"
           >
-            Refresh
+            {loading ? "refreshing..." : "refresh"}
+          </button>
+
+          <button
+            onClick={() => items.map((it) => deleteChunk(it.id))}
+            disabled={loading}
+            title="delete all chunks"
+            className="wide-button delete-button"
+          >
+            {loading ? "deleting…" : "delete page"}
           </button>
         </div>
-      </div>
 
-      {loading && <div style={s.status}>loading…</div>}
-      {error && (
-        <div style={s.errorBox}>
-          <strong>Error:</strong> {error}
-        </div>
-      )}
+        {/* {loading && <div style={s.status}>loading…</div>}
+        {error && (
+          <div style={s.errorBox}>
+            <strong>Error:</strong> {error}
+          </div>
+        )} */}
 
-      <div style={s.pager}>
-        <button onClick={prev} disabled={loading || offset === 0} style={s.btn}>
-          Prev
-        </button>
-        <button
-          onClick={next}
-          disabled={loading || items.length < limit}
-          style={s.btn}
-        >
-          Next
-        </button>
-        <span style={s.subtle}>
-          offset: <code>{offset}</code> · showing: <code>{items.length}</code>
-        </span>
-      </div>
+        <div className="peek-list">
+          {items.map((it) => (
+            <div key={it.id} className="chunk-card">
+              {/* Only show chunk text until expanded */}
+              <details className="chunk-details">
+                <summary className="chunk-summary">
+                  <span className="chunk-preview" title={it.document}>
+                    {it.document}
+                  </span>
+                </summary>
 
-      <div style={s.list}>
-        {items.map((it) => (
-          <div key={it.id} style={s.card}>
-            {/* Only show chunk text until expanded */}
-            <details style={s.details}>
-              <summary style={s.summary}>
-                <span style={s.previewText} title={it.document}>
-                  {it.document}
-                </span>
-              </summary>
+                <div className="chunk-expanded">
+                  <div className="chunk-expanded-container">
+                    <div className="chunk-id">
+                      <div className="chunk-id-label">chunk id:</div>
+                      <code className="chunk-id-number">{it.id}</code>
+                    </div>
 
-              <div style={s.expanded}>
-                <div style={s.metaRow}>
-                  <div style={s.metaBlock}>
-                    <div style={s.metaLabel}>Chunk ID</div>
-                    <code style={s.mono}>{it.id}</code>
+                    <button
+                      onClick={() => deleteChunk(it.id)}
+                      disabled={loading || deletingId === it.id}
+                      className="chunk-delete-button wide-button delete-button"
+                      title="Delete this chunk"
+                    >
+                      {deletingId === it.id ? "deleting…" : "delete"}
+                    </button>
                   </div>
 
-                  <button
-                    onClick={() => deleteChunk(it.id)}
-                    disabled={loading || deletingId === it.id}
-                    style={s.dangerBtn}
-                    title="Delete this chunk"
-                  >
-                    {deletingId === it.id ? "Deleting…" : "Delete"}
-                  </button>
-                </div>
+                  {/* <div style={s.metaBlock}>
+                    <div style={s.metaLabel}>Full text</div>
+                    <div style={s.fullText}>{it.document}</div>
+                  </div>
 
-                <div style={s.metaBlock}>
-                  <div style={s.metaLabel}>Full text</div>
-                  <div style={s.fullText}>{it.document}</div>
+                  <div style={s.metaBlock}>
+                    <div style={s.metaLabel}>Metadata</div>
+                    <pre style={s.pre}>
+                      {JSON.stringify(it.metadata || {}, null, 2)}
+                    </pre>
+                  </div> */}
                 </div>
+              </details>
+            </div>
+          ))}
 
-                <div style={s.metaBlock}>
-                  <div style={s.metaLabel}>Metadata</div>
-                  <pre style={s.pre}>
-                    {JSON.stringify(it.metadata || {}, null, 2)}
-                  </pre>
-                </div>
-              </div>
-            </details>
+          {!loading && items.length !== 0 && (
+            <div className="chunk-card">No chunks returned for this page.</div>
+          )}
+        </div>
+
+        <div className="peek-pager">
+          <span className="peek-pager-info">
+            offset: <code>{offset}</code> · showing: <code>{items.length}</code>
+          </span>
+
+          <div className="peek-pager-button-container">
+            <button
+              onClick={prev}
+              disabled={loading || offset === 0}
+              className="peek-prev-button"
+            >
+              prev
+            </button>
+            <button
+              onClick={next}
+              disabled={loading || items.length < limit}
+              className="peek-next-button"
+            >
+              next
+            </button>
           </div>
-        ))}
-
-        {!loading && items.length === 0 && (
-          <div style={s.empty}>No chunks returned for this page.</div>
-        )}
+        </div>
       </div>
     </div>
   );
 }
 
-const s = {
-  page: {
-    maxWidth: 980,
-    margin: "0 auto",
-    padding: 16,
-    fontFamily:
-      "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial",
-  },
-  headerRow: {
-    display: "flex",
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-    gap: 12,
-    flexWrap: "wrap",
-    marginBottom: 12,
-  },
-  h3: { margin: 0, fontSize: 18, fontWeight: 650 },
-  controls: { display: "flex", alignItems: "center", gap: 10 },
-  label: { fontSize: 13 },
-  select: { marginLeft: 6, padding: "6px 8px" },
-  pager: {
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-    margin: "10px 0 14px",
-    flexWrap: "wrap",
-  },
-  btn: { padding: "8px 10px", cursor: "pointer" },
-  ghostBtn: { padding: "8px 10px", cursor: "pointer" },
-  status: { fontSize: 13, opacity: 0.8, marginTop: 8 },
-  subtle: { fontSize: 12, opacity: 0.75 },
-  errorBox: {
-    marginTop: 10,
-    padding: 10,
-    border: "1px solid #d33",
-    background: "#ffecec",
-    color: "#520000",
-    borderRadius: 10,
-  },
-  list: { display: "grid", gap: 10 },
-  card: {
-    border: "1px solid #e5e7eb",
-    borderRadius: 12,
-    padding: 10,
-    background: "#272727ff",
-  },
-  details: { width: "100%" },
-  summary: {
-    cursor: "pointer",
-    listStyle: "none",
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-    padding: "6px 2px",
-  },
-  previewText: {
-    display: "block",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-    width: "100%",
-    fontSize: 14,
-    lineHeight: 1.35,
-  },
-  expanded: {
-    marginTop: 10,
-    borderTop: "1px solid #f0f0f0",
-    paddingTop: 10,
-    display: "grid",
-    gap: 10,
-  },
-  metaRow: {
-    display: "flex",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: 12,
-    flexWrap: "wrap",
-  },
-  metaBlock: { display: "grid", gap: 6 },
-  metaLabel: { fontSize: 12, opacity: 0.7 },
-  mono: {
-    fontFamily:
-      'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-    fontSize: 12,
-  },
-  fullText: {
-    fontSize: 13,
-    lineHeight: 1.45,
-    whiteSpace: "pre-wrap",
-    wordBreak: "break-word",
-  },
-  pre: {
-    margin: 0,
-    padding: 10,
-    background: "#272727ff",
-    borderRadius: 10,
-    overflowX: "auto",
-    fontSize: 12,
-  },
-  dangerBtn: {
-    padding: "8px 10px",
-    cursor: "pointer",
-    border: "1px solid #c33",
-    background: "#ffecec",
-    color: "#520000",
-    borderRadius: 10,
-    height: "fit-content",
-  },
-  empty: {
-    padding: 14,
-    border: "1px dashed #cbd5e1",
-    borderRadius: 12,
-    fontSize: 13,
-    opacity: 0.8,
-  },
-};
+// const s = {
+//   page: {
+//     maxWidth: 980,
+//     margin: "0 auto",
+//     padding: 16,
+//     fontFamily:
+//       "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial",
+//   },
+//   headerRow: {
+//     display: "flex",
+//     alignItems: "flex-end",
+//     justifyContent: "space-between",
+//     gap: 12,
+//     flexWrap: "wrap",
+//     marginBottom: 12,
+//   },
+//   h3: { margin: 0, fontSize: 18, fontWeight: 650 },
+//   controls: { display: "flex", alignItems: "center", gap: 10 },
+//   label: { fontSize: 13 },
+//   select: { marginLeft: 6, padding: "6px 8px" },
+//   pager: {
+//     display: "flex",
+//     alignItems: "center",
+//     gap: 10,
+//     margin: "10px 0 14px",
+//     flexWrap: "wrap",
+//   },
+//   btn: { padding: "8px 10px", cursor: "pointer" },
+//   ghostBtn: { padding: "8px 10px", cursor: "pointer" },
+//   status: { fontSize: 13, opacity: 0.8, marginTop: 8 },
+//   subtle: { fontSize: 12, opacity: 0.75 },
+//   errorBox: {
+//     marginTop: 10,
+//     padding: 10,
+//     border: "1px solid #d33",
+//     background: "#ffecec",
+//     color: "#520000",
+//     borderRadius: 10,
+//   },
+//   list: { display: "grid", gap: 10 },
+//   card: {
+//     border: "1px solid #e5e7eb",
+//     borderRadius: 12,
+//     padding: 10,
+//     background: "#272727ff",
+//   },
+//   details: { width: "100%" },
+//   summary: {
+//     cursor: "pointer",
+//     listStyle: "none",
+//     display: "flex",
+//     alignItems: "center",
+//     gap: 10,
+//     padding: "6px 2px",
+//   },
+//   previewText: {
+//     display: "block",
+//     overflow: "hidden",
+//     textOverflow: "ellipsis",
+//     whiteSpace: "nowrap",
+//     width: "100%",
+//     fontSize: 14,
+//     lineHeight: 1.35,
+//   },
+//   expanded: {
+//     marginTop: 10,
+//     borderTop: "1px solid #f0f0f0",
+//     paddingTop: 10,
+//     display: "grid",
+//     gap: 10,
+//   },
+//   metaRow: {
+//     display: "flex",
+//     alignItems: "flex-start",
+//     justifyContent: "space-between",
+//     gap: 12,
+//     flexWrap: "wrap",
+//   },
+//   metaBlock: { display: "grid", gap: 6 },
+//   metaLabel: { fontSize: 12, opacity: 0.7 },
+//   mono: {
+//     fontFamily:
+//       'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+//     fontSize: 12,
+//   },
+//   fullText: {
+//     fontSize: 13,
+//     lineHeight: 1.45,
+//     whiteSpace: "pre-wrap",
+//     wordBreak: "break-word",
+//   },
+//   pre: {
+//     margin: 0,
+//     padding: 10,
+//     background: "#272727ff",
+//     borderRadius: 10,
+//     overflowX: "auto",
+//     fontSize: 12,
+//   },
+//   dangerBtn: {
+//     padding: "8px 10px",
+//     cursor: "pointer",
+//     border: "1px solid #c33",
+//     background: "#ffecec",
+//     color: "#520000",
+//     borderRadius: 10,
+//     height: "fit-content",
+//   },
+//   empty: {
+//     padding: 14,
+//     border: "1px dashed #cbd5e1",
+//     borderRadius: 12,
+//     fontSize: 13,
+//     opacity: 0.8,
+//   },
+// };

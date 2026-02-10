@@ -1,0 +1,158 @@
+.Peek, .Peek * {
+    margin: 0;
+    padding: 0;
+    color: white;
+}
+
+.Peek {
+    /* border: 1px seagreen dotted; */
+    border-radius: 5px;
+    width: 600px;
+    height: 550px;
+    padding: 10px 0px;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+
+}
+
+.wide-button {
+    padding-right: 30px;
+    padding-left: 30px;
+    border-radius: 5px;
+    height: 30px;
+    background-color: black;
+    border: 1px solid lightgray;
+}
+
+.wide-button:hover {
+
+    border-color: rgb(0, 152, 203);
+}
+
+.delete-button {
+    background-color: darkred;
+}
+
+
+.peek-container {
+    width: 80%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.peek-controls {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.peek-pagesize-select {
+    padding-right: 5px;
+    padding-left: 5;
+    border-radius: 0px;
+    height: 30px;
+    background-color: black;
+    border: 1px solid lightgray;
+}
+
+.peek-pagesize-select:hover {
+    cursor: pointer;
+    border-color: rgb(0, 152, 203);
+}
+
+.peek-refresh-button {
+    padding-right: 30px;
+    padding-left: 30px;
+    border-radius: 5px;
+    height: 30px;
+    background-color: black;
+    border: 1px solid lightgray;
+}
+
+.peek-refresh-button:hover {
+    border-color: rgb(0, 152, 203);
+}
+
+.peek-pager {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.peek-pager-button-container {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+}
+
+.peek-next-button, .peek-prev-button {
+    padding-right: 10px;
+    padding-left: 10px;
+    border-radius: 5px;
+    height: 30px;
+
+    background-color: black;
+    border: 1px solid lightgray;
+}
+
+.peek-next-button:hover, .peek-prev-button:hover {
+    border-color: rgb(0, 152, 203);
+}
+
+
+/* Peek List */
+
+.peek-list {
+    height: 350px;
+    width: 100%;
+    overflow-y: scroll;
+}
+
+.chunk-card {
+    border: 1px solid white;
+    border-radius: 4px;
+    margin-bottom: 5px;
+    margin-right: 5px;
+    text-align: left;
+    padding: 10px;
+}
+
+
+
+.chunk-summary {
+    /* margin: 8px; */
+    color: white;
+}
+
+.chunk-details:open > .chunk-summary, .chunk-details:open .chunk-preview {
+    color:rgb(0, 152, 203)
+}
+ 
+.chunk-preview {
+    cursor: pointer;
+}
+
+.chunk-expanded {
+    border-top: 1px solid white;
+    margin: 8px;
+    text-align: left;
+}
+
+.chunk-expanded-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+
+    margin-top: 10px;
+}
+
+.chunk-id-label {
+    color: gray;
+}
