@@ -1,0 +1,71 @@
+.Ingest, .Ingest * {
+    margin: 0;
+    padding: 0;
+    color: white;
+}
+
+.Ingest {
+    /* border: 1px red dotted; */
+    border-radius: 5px;
+
+    width: 600px;
+    height: 550px;
+
+    padding: 10px 0px;;
+
+}
+
+.ingest-form-container {
+    width: 100%;
+    height: 100%;
+
+}
+
+.ingest-form {
+    height: 100%;
+    width: 100%;
+
+    display: flex;
+    flex-direction: column;
+
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.ingest-textarea {
+    height: 450px;
+    width: 80%;
+
+    padding: 5px;
+}
+
+.ingest-textarea:focus {
+    outline: none;
+    border-color: rgb(0, 152, 203);
+}
+
+.ingest-button-container {
+    width: 80%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+
+    gap: 50px;
+}
+
+.ingest-button {
+
+    padding-right: 30px;
+     padding-left: 30px;
+    border-radius: 5px;
+    height: 30px;
+
+    background-color: black;
+    border: 1px solid lightgray;
+}
+
+.ingest-button:hover {
+
+    border-color: rgb(0, 152, 203);
+}

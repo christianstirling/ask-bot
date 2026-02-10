@@ -111,7 +111,7 @@ export default function ChromaChunkList() {
   }
 
   return (
-    <div style={s.page}>
+    <div className="Peek">
       <div style={s.headerRow}>
         <div>
           <h3 style={s.h3}>Chroma chunks</h3>
