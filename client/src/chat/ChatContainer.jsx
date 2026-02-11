@@ -83,10 +83,15 @@ export default function ChatContainer() {
   };
 
   return (
-    <Chat
-      messages={messages}
-      isLoading={isLoading}
-      onSend={handleSendMessage}
-    />
+    <div className="ChatContainer">
+      <div className="chat-container-header">
+        <h3>chat</h3>
+      </div>
+      <Chat
+        messages={messages}
+        isLoading={isLoading}
+        onSend={handleSendMessage}
+      />
+    </div>
   );
 }
