@@ -60,7 +60,7 @@ export default function ChatContainer() {
       const assistantMessage = {
         id: crypto.randomUUID() + 1,
         role: "assistant",
-        content: data.message,
+        content: data.assistantMessage,
       };
 
       console.log("AI MESSAGE: " + assistantMessage.content);
