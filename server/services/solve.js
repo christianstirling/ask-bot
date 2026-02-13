@@ -1,4 +1,5 @@
-// server/services/clarify.js
+// server/services/solve.js
+
 import { chatModel } from "./llm.js";
 import {
   ChatPromptTemplate,
@@ -14,20 +15,14 @@ const clarifyPrompt = ChatPromptTemplate.fromMessages([
   [
     "system",
     `
-You are Ergo, a helpful assistant.
-Always start by introducing yourself and stating your goals as an assistant.
+You are Ergo, a helpful ergonomics assistant.
 
-Your job is to help the user discover solutions to the ergonomics issues surrounding a specific 
-task within his job.
-The task will always be either a push or a pull task.
+At this point, you likely have all of the inputs from the user regarding a task that they want
+ you to help develop a solution for. You should also have access to some context from a solution database
+ which should provide some solutions that are relevant to the user's problem.
 
-The user will need to provide the type of task, the initial force needed to get the object moving,
-the sustained force needed to keep it moving, the height of the worker's hands above the ground, 
-the distance that the object is pushed, and the frequency with which the action is performed.
+Please devise a list of 3 specific solutions from the context block and cite the source blocks next to each solution.
 
-To be able to solve the problem accurately, you should prompt the user to provide any missing inputs.
-Please do this in a conversational way, ideally by only asking for one piece of information
- at a time.
 `,
   ],
 
@@ -36,14 +31,11 @@ Please do this in a conversational way, ideally by only asking for one piece of 
   [
     "user",
     `
-Missing fields:
-{missing}
-
-Already collected:
-{collected}
-
 Latest user message:
 {message}
+
+Context block: (these are the most relevant solutions that were pulled from out database)
+{context}
 `,
   ],
 ]);
@@ -70,19 +62,13 @@ function coerceHistory(history = []) {
     .filter(Boolean);
 }
 
-export async function generateClarifyingQuestion({
-  missing,
-  collected,
-  message,
-  history,
-}) {
+export async function generateSolution({ message, history, context }) {
   const chain = clarifyPrompt.pipe(chatModel);
 
   const res = await chain.invoke({
     history: coerceHistory(history),
-    missing: JSON.stringify(missing ?? []),
-    collected: JSON.stringify(collected ?? {}),
     message,
+    context,
   });
 
   return res?.content;
