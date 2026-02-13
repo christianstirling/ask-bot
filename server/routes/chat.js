@@ -69,7 +69,7 @@ router.post("/", async (req, res, next) => {
     if (state.shouldRetrieveNow && state.hasEnoughInfo) {
       const sources = await retrieve({
         question: message,
-        topK: Number.isFinite(topK) ? topK : 5,
+        topK: Number.isFinite(topK) ? topK : 10,
         where: where && typeof where === "object" ? where : undefined,
       });
 
@@ -77,7 +77,7 @@ router.post("/", async (req, res, next) => {
       console.log("CONTEXT:", context);
 
       const ragMessage =
-        `You are Ergo. Use the SOURCES to answer.\n` +
+        `Below are the latest user message and a list of the sources from the solution database.\n` +
         `If the answer is not in the sources, say you don't know.\n` +
         `Cite sources inline like: [SOURCE 1].\n\n` +
         `SOURCES:\n${context}\n\n` +
