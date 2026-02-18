@@ -89,7 +89,7 @@ export default function ChatContainer() {
       console.error(err);
 
       const errorMessage = {
-        id: Date.now() + 2,
+        id: crypto.randomUUID(),
         role: "system",
         content: "Sorry, there was an error reaching the server.",
       };
@@ -124,14 +124,32 @@ export default function ChatContainer() {
       content,
     }));
 
+    const toNum = (v) => (v === "" || v == null ? null : Number(v));
+
+    const nextState = {
+      ...state,
+      phase: "INTAKE",
+      intake: {
+        ...(state?.intake ?? {}),
+        action: action ?? null,
+        initialForce: toNum(force),
+        sustainedForce: toNum(force), // per your assumption
+        handHeight: toNum(vertical), // rename if your server expects something else
+        distance: toNum(distance_horizontal),
+        frequency: toNum(frequency),
+      },
+    };
+
+    setState(nextState);
+
     try {
       setIsLoading(true);
 
       console.log("-----\nSending input\n");
       console.log("User message:", trimmed);
       console.log("Chat history:", ...history);
-      console.log("Current chat phase:", state.phase);
-      console.log("Current intake status:", state.intake, "\n-----\n");
+      console.log("Current chat phase:", nextState.phase);
+      console.log("Current intake status:", nextState.intake, "\n-----\n");
 
       const res = await fetch("http://localhost:3001/api/chat", {
         method: "POST",
@@ -141,9 +159,10 @@ export default function ChatContainer() {
         body: JSON.stringify({
           message: trimmed,
           history,
-          state,
+          state: nextState, // IMPORTANT: sending the new state here, not just 'state'
         }),
       });
+
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         throw new Error(
@@ -153,7 +172,7 @@ export default function ChatContainer() {
 
       // console.log("response", data);
       const assistantMessage = {
-        id: Date.now() + 1,
+        id: crypto.randomUUID(),
         role: "assistant",
         content: data.assistantMessage,
       };
@@ -172,7 +191,7 @@ export default function ChatContainer() {
       console.error(err);
 
       const errorMessage = {
-        id: Date.now() + 2,
+        id: crypto.randomUUID(),
         role: "system",
         content: "Sorry, there was an error reaching the server.",
       };
