@@ -1,10 +1,26 @@
 import Chat from "./Chat.jsx";
 import "./ChatContainer.css";
 import { useState } from "react";
+import TaskInput from "../input/TaskInput.jsx";
+
+const initialState = {
+  phase: "INTRO",
+  intake: {
+    action: null,
+    initialForce: null,
+    sustainedForce: null,
+    handHeight: null,
+    distance: null,
+    frequency: null,
+  },
+  calc: null,
+  lastAsked: null,
+};
 
 export default function ChatContainer() {
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [state, setState] = useState(initialState);
 
   const handleSendMessage = async (text) => {
     const trimmed = text.trim();
@@ -16,27 +32,22 @@ export default function ChatContainer() {
       content: trimmed,
     };
 
-    console.log("USER MESSAGE: " + userMessage.content);
-    console.log("USER MSG ID: " + userMessage.id);
-
     const nextMessages = [...messages, userMessage];
     setMessages(nextMessages);
-    //   role: m.role,
-    //   content: m.content,
-    // }));
 
     const history = nextMessages.map(({ role, content }) => ({
       role,
       content,
     }));
 
-    console.log("HISTORY:");
-    for (let h of history) {
-      console.log(h.content);
-    }
-
     try {
       setIsLoading(true);
+
+      console.log("-----\nSending a message\n");
+      console.log("User message:", trimmed);
+      console.log("Chat history:", ...history);
+      console.log("Current chat phase:", state.phase);
+      console.log("Current intake status:", state.intake, "\n-----\n");
 
       const res = await fetch("http://localhost:3001/api/chat", {
         method: "POST",
@@ -46,6 +57,7 @@ export default function ChatContainer() {
         body: JSON.stringify({
           message: trimmed,
           history,
+          state,
         }),
       });
 
@@ -63,8 +75,14 @@ export default function ChatContainer() {
         content: data.assistantMessage,
       };
 
-      console.log("AI MESSAGE: " + assistantMessage.content);
-      console.log("AI MSG ID: " + assistantMessage.id);
+      console.log("-----\nReceiving a message\n");
+      console.log("AI message:", assistantMessage.content);
+      console.log("New chat phase:", data.state.phase);
+      console.log("New intake status:", data.state.intake, "\n-----\n");
+
+      if (data.state) {
+        setState(data.state);
+      }
 
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (err) {
@@ -82,16 +100,96 @@ export default function ChatContainer() {
     }
   };
 
+  const handleSendInput = async (form) => {
+    const messageHeader = `Below is a list of inputs that define a task. For now, assume the initial force and sustained force are the same. \n---`;
+
+    const { action, force, vertical, distance_horizontal, frequency } = form;
+
+    const trimmed = `${messageHeader}\nAction: ${action}\nForce: ${force}\nVertical: ${vertical}\nDistance horizontal: ${distance_horizontal}\nFrequency: ${frequency}`;
+    if (!trimmed) {
+      return;
+    }
+
+    const userMessage = {
+      id: crypto.randomUUID(),
+      role: "user",
+      content: trimmed,
+    };
+
+    const nextMessages = [...messages, userMessage];
+    setMessages(nextMessages);
+
+    const history = nextMessages.map(({ role, content }) => ({
+      role,
+      content,
+    }));
+
+    try {
+      setIsLoading(true);
+
+      console.log("-----\nSending input\n");
+      console.log("User message:", trimmed);
+      console.log("Chat history:", ...history);
+      console.log("Current chat phase:", state.phase);
+      console.log("Current intake status:", state.intake, "\n-----\n");
+
+      const res = await fetch("http://localhost:3001/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: trimmed,
+          history,
+          state,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(
+          data?.error || `Request failed with status ${res.status}`,
+        );
+      }
+
+      // console.log("response", data);
+      const assistantMessage = {
+        id: Date.now() + 1,
+        role: "assistant",
+        content: data.assistantMessage,
+      };
+
+      console.log("-----\nReceiving a message\n");
+      console.log("AI message:", assistantMessage.content);
+      console.log("New chat phase:", data.state.phase);
+      console.log("New intake status:", data.state.intake, "\n-----\n");
+
+      if (data.state) {
+        setState(data.state);
+      }
+
+      setMessages((prev) => [...prev, assistantMessage]);
+    } catch (err) {
+      console.error(err);
+
+      const errorMessage = {
+        id: Date.now() + 2,
+        role: "system",
+        content: "Sorry, there was an error reaching the server.",
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="ChatContainer">
-      <div className="chat-container-header">
-        <h3>chat</h3>
-      </div>
       <Chat
         messages={messages}
         isLoading={isLoading}
         onSend={handleSendMessage}
       />
+      <TaskInput onSend={handleSendInput} />
     </div>
   );
 }

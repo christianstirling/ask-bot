@@ -2,7 +2,7 @@
     /* border: 1px dotted white; */
     border-radius: 5px;
 
-    width: 100%;
+    width: 500px;
     height: 90%;
 
     display: flex;
@@ -11,4 +11,6 @@
     justify-content: space-between;
     align-items: center;
     gap: 10px;
+
+    margin-left: 30px;
 }

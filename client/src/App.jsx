@@ -8,8 +8,8 @@ function App() {
   return (
     <div>
       <ChatContainer />
-      <Ingest />
-      <Peek />
+      {/* <Ingest />
+      <Peek /> */}
     </div>
   );
 }

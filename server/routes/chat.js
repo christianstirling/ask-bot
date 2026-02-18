@@ -1,14 +1,57 @@
 // server/routes/chat.js
 import express from "express";
 const router = express.Router();
-
-import { extractIntakeState } from "../services/intake.js";
-import { generateClarifyingQuestion } from "../services/clarify.js";
-import { retrieve } from "../services/retrieve.js";
 import { chat } from "../services/chat.js";
 import { chatModel } from "../services/llm.js";
-import { generateIntroduction } from "../services/introduce.js";
-import { generateSolution } from "../services/solve.js";
+
+const TOP_K = 10;
+
+function getMissingIntakeFields(intake = {}) {
+  const required = [
+    "action",
+    "initialForce",
+    "sustainedForce",
+    "handHeight",
+    "distance",
+    "frequency",
+  ];
+  return required.filter((k) => intake[k] == null || intake[k] === "");
+}
+
+function decidePhase(state, message) {
+  console.log("DecidePhase:", !state?.phase);
+  if (!state?.phase) {
+    console.log("decidePhase: state / phase not found");
+    return "INTRO";
+  }
+
+  // Example: if intake missing required fields, keep collecting
+  if (state.phase === "INTAKE") {
+    console.log("decidePhase: phase = intake");
+    const missing = getMissingIntakeFields(state.intake);
+    if (missing.length > 0) {
+      console.log("decidePhase: intake is missing fields; ", missing);
+      return "INTAKE";
+    }
+    console.log("decidePhase: intake is complete");
+    return "CALC";
+  }
+
+  if (state.phase === "CALC") {
+    console.log("decidePhase: phase = calc");
+    return "INTERPRET";
+  }
+  if (state.phase === "INTERPRET") {
+    console.log("decidePhase: phase = interpret");
+    return "RETRIEVE_SOLVE";
+  }
+
+  console.log(
+    "decidePhase: phase did not meet any of the criteria for orchestration, returning original phase ",
+    state.phase,
+  );
+  return state.phase;
+}
 
 function buildContextBlock(sources) {
   return sources
@@ -28,108 +71,34 @@ function buildContextBlock(sources) {
 
 router.post("/", async (req, res, next) => {
   try {
-    const {
-      message,
-      history = [],
-      topK,
-      where,
-      returnSources = true,
-    } = req.body || {};
+    const { message, history = [], state = {} } = req.body || {};
 
     if (!message || typeof message !== "string") {
       return res.status(400).json({ error: "message (string) is required" });
     }
 
-    console.log("MESSAGE:", message);
-    console.log("HISTORY:", ...history);
-    console.log("HISTORY LENGTH:", history.length);
+    console.log("USER MESSAGE:", message);
+    // console.log("HISTORY:", ...history);
+    // console.log("HISTORY LENGTH:", history.length);
 
-    // 1) Extract intake + decision
-    const state = await extractIntakeState({ message, history });
-    console.log("INTAKE STATE:", JSON.stringify(state.hasEnoughInfo, null, 2));
+    console.log("full STATE:", state);
 
-    // if (process.env.NODE_ENV === "development") {
-    //   console.log("INTAKE STATE:", JSON.stringify(state, null, 2));
-    // }
+    const phase = decidePhase(state, message);
 
-    // 2) Not enough info -> ask via LLM
-    if (!state.hasEnoughInfo) {
-      if (history.length <= 1) {
-        // Introduce
-        console.log("INTRODUCE");
-        const assistantMessage = await generateIntroduction({
-          message,
-        });
+    let assistantMessage;
 
-        return res.json({
-          ok: true,
-          mode: "introduce",
-          assistantMessage,
-          state,
-        });
-      } else {
-        console.log("CLARIFY");
-        const assistantMessage = await generateClarifyingQuestion({
-          missing: state.missing,
-          collected: state.intake,
-          message,
-          history,
-        });
-        return res.json({
-          ok: true,
-          mode: "clarify",
-          assistantMessage,
-          state, // return state for client debugging (remove later if you want)
-        });
-      }
-    }
+    console.log("NEXT STATE:", phase);
+    let nextState = { ...state, phase };
 
-    // 3) Enough info, but only retrieve when appropriate
-    if (state.shouldRetrieveNow && state.hasEnoughInfo) {
-      const sources = await retrieve({
-        question: message,
-        topK: Number.isFinite(topK) ? topK : 10,
-        where: where && typeof where === "object" ? where : undefined,
-      });
+    assistantMessage = await chat(message, history, chatModel);
 
-      const context = buildContextBlock(sources);
-      console.log("CONTEXT:", context);
-
-      // const ragMessage =
-      //   `Below are the latest user message and a list of the sources from the solution database.\n` +
-      //   `If the answer is not in the sources, say you don't know.\n` +
-      //   `Cite sources inline like: [SOURCE 1].\n\n` +
-      //   `SOURCES:\n${context}\n\n` +
-      //   `USER QUESTION:\n${message}`;
-
-      // const assistantMessage = await chat(ragMessage, history, chatModel);
-
-      console.log("SOLVE");
-
-      const assistantMessage = await generateSolution({
-        message,
-        history,
-        context,
-      });
-
-      return res.json({
-        ok: true,
-        mode: "rag_answer",
-        assistantMessage,
-        ...(returnSources ? { sources } : {}),
-        state,
-      });
-    }
-
-    // 4) Enough info but decision says "not yet": normal chat turn
-    // (Optional, but matches your requirement about "appropriate time")
-    const assistantMessage = await chat(message, history, chatModel);
+    console.log("AI MESSAGE:", assistantMessage);
 
     return res.json({
       ok: true,
       mode: "chat",
+      state: nextState,
       assistantMessage,
-      state,
     });
   } catch (err) {
     next(err);

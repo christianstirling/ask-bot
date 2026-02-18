@@ -1,0 +1,40 @@
+.TaskInput {
+    width: 400px;
+    /* border: 1px solid red; */
+    height: 90%;
+    margin-right: 30px;
+}
+
+.input-form {
+    height: 100%;
+}
+
+
+.input-form {
+
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.input-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.input-item {
+    /* border: 1px solid green; */
+    text-align: left;
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+}
+
+.input-button {
+    width: 100px;
+
+    background-color: black;
+    border: 1px solid lightgray;
+}
