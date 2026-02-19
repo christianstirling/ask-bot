@@ -1,7 +1,5 @@
 // server/tools/determine_most_impactful_input.js
 
-import { determine_largest_mcp_value } from "../utils/determine_largest_mcp_value.js";
-
 function round(number, decimal) {
   const factor = Math.pow(10, decimal);
   return Math.round(number * factor) / factor;
