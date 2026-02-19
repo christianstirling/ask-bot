@@ -86,8 +86,8 @@ export function determine_most_impactful_input(
   action = "push",
 ) {
   const RL = 36.9;
-  // const CV = 0.214;
-  // const Z_25TH_PERCENTILE = -0.63;
+  const CV = 0.214;
+  const Z_25TH_PERCENTILE = -0.63;
 
   const { V_SF, DH_SF, F_SF } = calculate_scale_factors(
     handHeight,
@@ -95,10 +95,16 @@ export function determine_most_impactful_input(
     frequency,
   );
 
-  // const max_acceptible_value = RL * V * DH * F;
+  const max_acceptible_value = RL * V_SF * DH_SF * F_SF;
 
-  // const acceptible_force =
-  //   max_acceptible_value + Z_25TH_PERCENTILE * max_acceptible_value * CV;
+  const acceptable_force =
+    max_acceptible_value + Z_25TH_PERCENTILE * max_acceptible_value * CV;
+  if (initialForce <= acceptable_force) {
+    return {
+      description: `The task meets the criteria for the 25% percentile of female workers; therefore, it is acceptable.`,
+      mcpValues: null,
+    };
+  }
 
   const {
     vertical_contribution,
@@ -124,14 +130,29 @@ export function determine_most_impactful_input(
     force_mcp,
   );
 
-  const RESULT = {
-    name: name,
-    value: value,
-    description: `The most impactful task input for this job is ${name} with a metric contribution of ${round(
-      value,
-      2,
-    )}.`,
-  };
+  const arrayOfMcpValues = [
+    { name: "Hand height", value: round(vertical_mcp) },
+    { name: "Distance", value: round(distance_horizontal_mcp) },
+    { name: "Frequency", value: round(frequency_mcp) },
+    { name: "Initial Force", value: round(force_mcp) },
+  ];
 
-  return RESULT;
+  arrayOfMcpValues.sort((a, b) => b.value - a.value);
+
+  // const RESULT = {
+  //   name: name,
+  //   value: value,
+  //   description: `The most impactful task input for this job is ${name} with a metric contribution of ${round(
+  //     value,
+  //     2,
+  //   )}.`,
+  // };
+
+  // return RESULT;
+
+  return {
+    description: `The task did not meet the criteria for the 25% percentile of female workers; therefore, it is not acceptable. 
+    The most impactful task input for this job is ${name} with a metric contribution of ${round(value, 2)}`,
+    mcpValues: arrayOfMcpValues,
+  };
 }
