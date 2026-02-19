@@ -80,10 +80,11 @@ function determine_largest_mcp_value(height, distance, frequency, force) {
  */
 
 export function determine_most_impactful_input(
-  vertical,
-  distance_horizontal,
+  handHeight,
+  distance,
   frequency,
-  force,
+  initialForce,
+  sustainedForce,
   action = "push",
 ) {
   const RL = 36.9;
@@ -91,8 +92,8 @@ export function determine_most_impactful_input(
   // const Z_25TH_PERCENTILE = -0.63;
 
   const { V_SF, DH_SF, F_SF } = calculate_scale_factors(
-    vertical,
-    distance_horizontal,
+    handHeight,
+    distance,
     frequency,
   );
 
@@ -107,7 +108,7 @@ export function determine_most_impactful_input(
     frequency_contribution,
     force_contribution,
     sum_of_contributions,
-  } = calculate_contribution_values(V_SF, DH_SF, F_SF, RL, force);
+  } = calculate_contribution_values(V_SF, DH_SF, F_SF, RL, initialForce);
 
   const { vertical_mcp, distance_horizontal_mcp, frequency_mcp, force_mcp } =
     calculate_mcp_values(

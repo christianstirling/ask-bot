@@ -101,11 +101,19 @@ export default function ChatContainer() {
   };
 
   const handleSendInput = async (form) => {
-    const messageHeader = `Below is a list of inputs that define a task. For now, assume the initial force and sustained force are the same. \n---`;
+    const messageHeader = `Below is a list of inputs that define a task. \n---`;
+    // const messageFooter = `---\n`;
 
-    const { action, force, vertical, distance_horizontal, frequency } = form;
+    const {
+      action,
+      initialForce,
+      sustainedForce,
+      handHeight,
+      distance,
+      frequency,
+    } = form;
 
-    const trimmed = `${messageHeader}\nAction: ${action}\nForce: ${force}\nVertical: ${vertical}\nDistance horizontal: ${distance_horizontal}\nFrequency: ${frequency}`;
+    const trimmed = `${messageHeader}\nAction: ${action}\nInitial Force: ${initialForce} kg-force\nSustained Force:${sustainedForce} kg-force\nVertical: ${handHeight} meters\nDistance horizontal: ${distance} meters\nFrequency: ${frequency} per minute`;
     if (!trimmed) {
       return;
     }
@@ -132,10 +140,10 @@ export default function ChatContainer() {
       intake: {
         ...(state?.intake ?? {}),
         action: action ?? null,
-        initialForce: toNum(force),
-        sustainedForce: toNum(force), // per your assumption
-        handHeight: toNum(vertical), // rename if your server expects something else
-        distance: toNum(distance_horizontal),
+        initialForce: toNum(initialForce),
+        sustainedForce: toNum(sustainedForce), // per your assumption
+        handHeight: toNum(handHeight), // rename if your server expects something else
+        distance: toNum(distance),
         frequency: toNum(frequency),
       },
     };

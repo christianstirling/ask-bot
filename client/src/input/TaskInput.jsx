@@ -4,9 +4,10 @@ import "./TaskInput.css";
 export default function TaskInput({ onSend }) {
   const [form, setForm] = useState({
     action: "",
-    force: "",
-    vertical: "",
-    distance_horizontal: "",
+    initialForce: "",
+    sustainedForce: "",
+    handHeight: "",
+    distance: "",
     frequency: "",
   });
 
@@ -31,7 +32,8 @@ export default function TaskInput({ onSend }) {
               <input
                 type="radio"
                 name="action"
-                value={(form.action = "push")}
+                value="push"
+                checked={form.action === "push"}
                 onChange={handleChange}
               />
               Push
@@ -40,39 +42,54 @@ export default function TaskInput({ onSend }) {
               <input
                 type="radio"
                 name="action"
-                value={(form.action = "pull")}
+                value="pull"
+                checked={form.action === "pull"}
                 onChange={handleChange}
               />
               Pull
             </label>
           </div>
+
           <label className="input-item">
-            Force needed to move the object (in kg-force)
+            Force needed to start moving the object (in kg-force)
             <input
               type="number"
-              name="force"
-              value={form.force}
+              name="initialForce"
+              value={form.initialForce}
               onChange={handleChange}
             />
           </label>
+
+          <label className="input-item">
+            Force needed to keep the object moving (in kg-force)
+            <input
+              type="number"
+              name="sustainedForce"
+              value={form.sustainedForce}
+              onChange={handleChange}
+            />
+          </label>
+
           <label htmlFor="" className="input-item">
             Vertical height of the hands above the floor (in meters)
             <input
               type="number"
-              name="vertical"
-              value={form.vertical}
+              name="handHeight"
+              value={form.handHeight}
               onChange={handleChange}
             />
           </label>
+
           <label htmlFor="" className="input-item">
             Horizontal distance that the object is moved (in meters)
             <input
               type="number"
-              name="distance_horizontal"
-              value={form.distance_horizontal}
+              name="distance"
+              value={form.distance}
               onChange={handleChange}
             />
           </label>
+
           <label htmlFor="" className="input-item">
             Frequency (number of times the task is performed per minute)
             <input
