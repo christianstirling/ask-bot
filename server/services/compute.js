@@ -74,46 +74,68 @@ function determine_largest_mcp_value(height, distance, frequency, force) {
 /**
  * =====
  * Main export function
+ * -----
+ * 0.) Set up constants
+ * 1.) Calculate scale factors for V, DH, and F
+ * 2.) Calculate the maximum acceptable force value given the scale factors * RL (reference load)
+ * 3.) Calculate acceptable force for 25% percentile of female workers
+ * 4.) Check if actual force is acceptable--if so, return postive response
+ * 5.) Calculate individual and sum contribution values
+ * 6.) Calculate metric contribution percentages
+ * 7.) Determine the input variable with the largest MCP value
+ * 8.) Arrange array of input values with corresponding MCPs
+ * 9.) Return negative response with 7 and 8 included
  * =====
  */
 
 export function determine_most_impactful_input(
-  handHeight,
-  distance,
+  vertical_height,
+  horizontal_distance,
   frequency,
-  initialForce,
-  sustainedForce,
+  initial_force,
+  sustained_force = "",
   action = "push",
 ) {
+  // 0.)
+  // Reference load constant
   const RL = 36.9;
+  // Coefficient of variation constant
   const CV = 0.214;
+  // P-value at the 25th percentile of female workers
   const Z_25TH_PERCENTILE = -0.63;
 
+  // 1.)
   const { V_SF, DH_SF, F_SF } = calculate_scale_factors(
-    handHeight,
-    distance,
+    vertical_height,
+    horizontal_distance,
     frequency,
   );
 
-  const max_acceptible_value = RL * V_SF * DH_SF * F_SF;
+  // 2.)
+  const max_acceptable_value = RL * V_SF * DH_SF * F_SF;
 
+  // 3.)
   const acceptable_force =
-    max_acceptible_value + Z_25TH_PERCENTILE * max_acceptible_value * CV;
-  if (initialForce <= acceptable_force) {
+    max_acceptable_value + Z_25TH_PERCENTILE * max_acceptable_value * CV;
+
+  // 4.)
+  if (initial_force <= acceptable_force) {
     return {
       description: `The task meets the criteria for the 25% percentile of female workers; therefore, it is acceptable.`,
-      mcpValues: null,
+      mcpValues: [],
     };
   }
 
+  // 5.)
   const {
     vertical_contribution,
     distance_horizontal_contribution,
     frequency_contribution,
     force_contribution,
     sum_of_contributions,
-  } = calculate_contribution_values(V_SF, DH_SF, F_SF, RL, initialForce);
+  } = calculate_contribution_values(V_SF, DH_SF, F_SF, RL, initial_force);
 
+  // 6.)
   const { vertical_mcp, distance_horizontal_mcp, frequency_mcp, force_mcp } =
     calculate_mcp_values(
       vertical_contribution,
@@ -123,6 +145,7 @@ export function determine_most_impactful_input(
       sum_of_contributions,
     );
 
+  // 7.)
   const { name, value } = determine_largest_mcp_value(
     vertical_mcp,
     distance_horizontal_mcp,
@@ -130,26 +153,17 @@ export function determine_most_impactful_input(
     force_mcp,
   );
 
+  // 8.)
   const arrayOfMcpValues = [
-    { name: "Hand height", value: round(vertical_mcp) },
-    { name: "Distance", value: round(distance_horizontal_mcp) },
-    { name: "Frequency", value: round(frequency_mcp) },
-    { name: "Initial Force", value: round(force_mcp) },
+    { name: "Hand height", value: round(vertical_mcp, 2) },
+    { name: "Distance", value: round(distance_horizontal_mcp, 2) },
+    { name: "Frequency", value: round(frequency_mcp, 2) },
+    { name: "Initial Force", value: round(force_mcp, 2) },
   ];
 
   arrayOfMcpValues.sort((a, b) => b.value - a.value);
 
-  // const RESULT = {
-  //   name: name,
-  //   value: value,
-  //   description: `The most impactful task input for this job is ${name} with a metric contribution of ${round(
-  //     value,
-  //     2,
-  //   )}.`,
-  // };
-
-  // return RESULT;
-
+  // 9.)
   return {
     description: `The task did not meet the criteria for the 25% percentile of female workers; therefore, it is not acceptable. 
     The most impactful task input for this job is ${name} with a metric contribution of ${round(value, 2)}`,

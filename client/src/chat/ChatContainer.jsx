@@ -8,7 +8,7 @@ const initialState = {
   intake: {
     action: null,
     initialForce: null,
-    sustainedForce: null,
+    // sustainedForce: null,
     handHeight: null,
     distance: null,
     frequency: null,
@@ -113,7 +113,7 @@ export default function ChatContainer() {
       frequency,
     } = form;
 
-    const trimmed = `${messageHeader}\nAction: ${action}\nInitial Force: ${initialForce} kg-force\nSustained Force:${sustainedForce} kg-force\nVertical: ${handHeight} meters\nDistance horizontal: ${distance} meters\nFrequency: ${frequency} per minute`;
+    const trimmed = `${messageHeader}\nAction: ${action}\nInitial Force: ${initialForce} kg-force\nVertical: ${handHeight} meters\nDistance horizontal: ${distance} meters\nFrequency: ${frequency} per minute`;
     if (!trimmed) {
       return;
     }

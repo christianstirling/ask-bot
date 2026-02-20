@@ -11,7 +11,7 @@ function getMissingIntakeFields(intake = {}) {
   const required = [
     "action",
     "initialForce",
-    "sustainedForce",
+    // "sustainedForce",
     "handHeight",
     "distance",
     "frequency",
@@ -147,7 +147,7 @@ router.post("/", async (req, res, next) => {
         distance,
         frequency,
         initialForce,
-        sustainedForce,
+        // sustainedForce,
         action,
       } = state.intake;
 
@@ -156,11 +156,9 @@ router.post("/", async (req, res, next) => {
         distance,
         frequency,
         initialForce,
-        sustainedForce,
+        // sustainedForce,
         action,
       );
-
-      console.log("ROUTER:", result.mcpValues);
 
       systemPrompt = `You are Ergo, a helpful ergonomics AI assistant. 
       A metric analysis has been run on a set on data that the user has provided which describes a workplace task. 

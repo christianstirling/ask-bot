@@ -38,3 +38,7 @@
     background-color: black;
     border: 1px solid lightgray;
 }
+
+.field-error {
+    color: red;
+}
