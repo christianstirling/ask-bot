@@ -1,5 +1,17 @@
 // server/tools/determine_most_impactful_input.js
 
+const pValue = [
+  -2.33, -2.05, -1.88, -1.75, -1.64, -1.55, -1.48, -1.41, -1.34, -1.28, -1.23,
+  -1.18, -1.13, -1.08, -1.04, -0.99, -0.95, -0.92, -0.88, -0.84, -0.81, -0.77,
+  -0.74, -0.71, -0.67, -0.64, -0.61, -0.58, -0.55, -0.52, -0.5, -0.47, -0.44,
+  -0.41, -0.39, -0.36, -0.33, -0.31, -0.28, -0.25, -0.23, -0.2, -0.18, -0.15,
+  -0.13, -0.1, -0.08, -0.05, -0.03, 0, 0.03, 0.05, 0.08, 0.1, 0.13, 0.15, 0.18,
+  0.2, 0.23, 0.25, 0.28, 0.31, 0.33, 0.36, 0.39, 0.41, 0.44, 0.47, 0.5, 0.52,
+  0.55, 0.58, 0.61, 0.64, 0.67, 0.71, 0.74, 0.77, 0.81, 0.84, 0.88, 0.92, 0.95,
+  0.99, 1.04, 1.08, 1.13, 1.18, 1.23, 1.28, 1.34, 1.41, 1.48, 1.55, 1.64, 1.75,
+  1.88, 2.05, 2.33, 3.09,
+];
+
 function round(number, decimal) {
   const factor = Math.pow(10, decimal);
   return Math.round(number * factor) / factor;
@@ -102,7 +114,8 @@ export function determine_most_impactful_input(
   // Coefficient of variation constant
   const CV = 0.214;
   // P-value at the 25th percentile of female workers
-  const Z_25TH_PERCENTILE = -0.63;
+  const Z_25TH_PERCENTILE = pValue[24];
+  console.log(Z_25TH_PERCENTILE);
 
   // 1.)
   const { V_SF, DH_SF, F_SF } = calculate_scale_factors(
@@ -123,9 +136,20 @@ export function determine_most_impactful_input(
     return {
       description: `The task meets the criteria for the 25% percentile of female workers; therefore, it is acceptable.`,
       mcpValues: [],
+      percentWorkersFatigued: null,
     };
   }
 
+  const actual_p_value =
+    (initial_force - max_acceptable_value) / (max_acceptable_value * CV);
+  const actual_p_index = pValue.findIndex((p) => p >= actual_p_value);
+  let percent_workers_fatigued;
+
+  if (actual_p_index === -1) {
+    percent_workers_fatigued = 99;
+  } else {
+    percent_workers_fatigued = actual_p_index + 1;
+  }
   // 5.)
   const {
     vertical_contribution,
@@ -168,5 +192,6 @@ export function determine_most_impactful_input(
     description: `The task did not meet the criteria for the 25% percentile of female workers; therefore, it is not acceptable. 
     The most impactful task input for this job is ${name} with a metric contribution of ${round(value, 2)}`,
     mcpValues: arrayOfMcpValues,
+    percentWorkersFatigued: percent_workers_fatigued,
   };
 }

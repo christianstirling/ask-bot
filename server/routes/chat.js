@@ -164,11 +164,13 @@ router.post("/", async (req, res, next) => {
       A metric analysis has been run on a set on data that the user has provided which describes a workplace task. 
       Below are the results of that analysis:
       ${result.description}
+      If the result of the analysis is negative, then here is the actual percent workers fatigued (blank if task is acceptable):
+      ${result.percentWorkersFatigued ? `${result.percentWorkersFatigued}% of female workers cannot perform the task` : "\n"}
       Additionally, here is a list of the metric contribution percentages for each task input:
       ${result.mcpValues.map((input) => `${input.name}: ${input.value}`).join("\n")}
       Generate a response to the user based on the current chat history and the result of the analysis. 
       If the task is deemed acceptable, then tell that to the user.
-      If the task is deemed not acceptable, then list the task inputs alongside their respective mcp values.
+      If the task is deemed not acceptable, then compare the needed percent of workers fatigued to the actual percent, list the task inputs alongside their respective mcp values.
       
       `;
       assistantMessage = await chat(message, history, chatModel, systemPrompt);
