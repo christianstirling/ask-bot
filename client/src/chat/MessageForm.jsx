@@ -20,7 +20,7 @@ export default function MessageForm({ onSend }) {
         onChange={(e) => setValue(e.target.value)}
       />
       <button type="submit" className="message_submit">
-        send
+        Send
       </button>
     </form>
   );

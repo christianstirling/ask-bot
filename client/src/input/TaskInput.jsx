@@ -105,6 +105,19 @@ export default function TaskInput({ onSend }) {
     setErrors({});
   }
 
+  function handleClear() {
+    setForm({
+      action: "",
+      initialForce: "",
+      handHeight: "",
+      distance: "",
+      frequency: "",
+    });
+    setErrors({});
+    setTouched({});
+    setSubmitAttempted(false);
+  }
+
   function showError(name) {
     return (touched[name] || submitAttempted) && errors[name];
   }
@@ -245,10 +258,15 @@ export default function TaskInput({ onSend }) {
             </span>
           )}
         </fieldset>
+        <div className="button-container">
+          <button type="button" onClick={handleClear} className="input-button">
+            Clear
+          </button>
 
-        <button type="submit" className="input-button">
-          submit
-        </button>
+          <button type="submit" className="input-button">
+            Submit
+          </button>
+        </div>
       </form>
     </div>
   );
