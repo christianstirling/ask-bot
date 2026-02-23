@@ -4,8 +4,10 @@ const router = express.Router();
 import { chat } from "../services/chat.js";
 import { chatModel } from "../services/llm.js";
 import { determine_most_impactful_input } from "../services/compute.js";
+import { retrieve } from "../services/retrieve.js";
 
-const TOP_K = 10;
+// const TOP_K = 10;
+let result;
 
 function getMissingIntakeFields(intake = {}) {
   const required = [
@@ -19,43 +21,32 @@ function getMissingIntakeFields(intake = {}) {
   return required.filter((k) => intake[k] == null || intake[k] === "");
 }
 
-function decidePhase(state, message) {
+function moveToNextPhase(state, message) {
   console.log("DecidePhase:", !state?.phase);
   if (!state?.phase) {
-    // console.log("decidePhase: state / phase not found");
     return "INTRO";
   }
 
-  // Example: if intake missing required fields, keep collecting
   if (state.phase === "INTAKE") {
-    // console.log("decidePhase: phase = intake");
     const missing = getMissingIntakeFields(state.intake);
     if (missing.length > 0) {
-      // console.log("decidePhase: intake is missing fields; ", missing);
       return "INTAKE";
     }
-    // console.log("decidePhase: intake is complete");
     return "CONFIRM_CALC";
   }
 
   if (state.phase === "CONFIRM_CALC") {
-    // console.log("decidePhase: calculation confirmed");
     return "CALC";
   }
 
   if (state.phase === "CALC") {
-    // console.log("decidePhase: phase = calc");
-    return "INTERPRET";
-  }
-  if (state.phase === "INTERPRET") {
-    // console.log("decidePhase: phase = interpret");
-    return "RETRIEVE_SOLVE";
+    return "CALC_DETAILS";
   }
 
-  console.log(
-    // "decidePhase: phase did not meet any of the criteria for orchestration, returning original phase ",
-    state.phase,
-  );
+  if (state.phase === "CALC_DETAILS") {
+    return "TASK_SUMMARY";
+  }
+
   return state.phase;
 }
 
@@ -83,42 +74,49 @@ router.post("/", async (req, res, next) => {
       return res.status(400).json({ error: "message (string) is required" });
     }
 
-    // console.log("USER MESSAGE:", message);
-    // console.log("HISTORY:", ...history);
-    // console.log("HISTORY LENGTH:", history.length);
-    // console.log("full STATE:", state);
-
-    const phase = decidePhase(state, message);
+    const phase = moveToNextPhase(state, message);
 
     let assistantMessage;
-    let systemPrompt;
+    // let systemPrompt;
 
-    // console.log("NEXT STATE:", phase);
     let nextState = { ...state, phase };
 
-    // console.log("STATE:", state);
-    /**
-     * =====
-     * Here is where I will be adding in the first pipeline: confirm_calc
-     * -----
-     * Happens when intake is complete.
-     * Purpose is to generate a response message from the AI prompting user to confirm that they are ready to begin calc.
-     * =====
-     */
-
     if (phase === "INTRO") {
-      systemPrompt = `You are Ergo, a helpful ergonomics AI assistant. 
-      Your job is to receive workplace task inputs from a user, perform a calculation using those values, 
-      retrieve data from a database regarding relevant solutions based on the metrics resulting from those 
-      calculations, and then suggest relevant solutions based on that data.
+      const systemPrompt = `Assistant directions:
+      
+      You are Ergo, a helpful ergonomics AI assistant. 
+
+      Your job is to greet the user and give them an introduction to you and to this app.
+      The purpose of the app is to take input from a Task Input form, use it to compute
+      a metric analysis, and ultimately provide solution suggestions to the user 
+      to help improve the task.
+
+      Ask the user what they want help with. If the user wants analysis or solution development for a workplace task, please refer them to the 
+      Task Input form to enter details related to this task.
+
       Please generate the best response to the user's message based on the given chat history. 
+
+      Try to keep responses short and sweet, while making sure to answer any specific 
+      questions asked by the user.
+      
       If you have not already, please introduce yourself to the user.
+
+      Information at your disposal (reference if needed:)
+    
+      The Task Input form looks like this:
+      1.) Type of action being performed (Push or Pull)
+      2.) Force needed to start moving the object (in kg-force)
+      3.) Vertical height of the hands above the floor (in meters)
+      4.) Horizontal distance that the object is moved (in meters)
+      5.) Frequency (number of times the task is performed per minute)
+
       `;
       assistantMessage = await chat(message, history, chatModel, systemPrompt);
     }
 
     if (phase === "INTAKE") {
-      systemPrompt = `You are Ergo, a helpful ergonomics AI assistant. 
+      const systemPrompt = `You are Ergo, a helpful ergonomics AI assistant. 
+
       Your job is to receive workplace task inputs from a user, perform a calculation using those values, 
       retrieve data from a database regarding relevant solutions based on the metrics resulting from those 
       calculations, and then suggest relevant solutions based on that data.
@@ -129,7 +127,7 @@ router.post("/", async (req, res, next) => {
     }
 
     if (phase === "CONFIRM_CALC") {
-      systemPrompt = `You are Ergo, a helpful ergonomics AI assistant. 
+      const systemPrompt = `You are Ergo, a helpful ergonomics AI assistant. 
       You have just received all of the necessary input variables to be able to perform an ergonomic analysis on 
       the user's workplace task. Please confirm that the user is ready to begin the analysis.
       `;
@@ -151,7 +149,7 @@ router.post("/", async (req, res, next) => {
         action,
       } = state.intake;
 
-      const result = determine_most_impactful_input(
+      result = determine_most_impactful_input(
         handHeight,
         distance,
         frequency,
@@ -160,23 +158,64 @@ router.post("/", async (req, res, next) => {
         action,
       );
 
-      systemPrompt = `You are Ergo, a helpful ergonomics AI assistant. 
+      const systemPrompt = `You are Ergo, a helpful ergonomics AI assistant. 
+
       A metric analysis has been run on a set on data that the user has provided which describes a workplace task. 
-      Below are the results of that analysis:
+
+      Generate a response to the user based on the current chat history and the result of the analysis. 
+
+      If the task is deemed acceptable, then tell that to the user.
+      If the task is deemed not acceptable, then compare the needed percent of workers fatigued to the actual percent and 
+      tell the user what the most impactful input variable is.
+
+      Next, ask the user if they would like more information about the analysis.
+
+      ---
+
+      Below is the full result of the metric analysis. Use information from this sparingly, 
+      but whenever needed to generate the appropriate response.
+
+      A description of the results of that analysis:
       ${result.description}
+
       If the result of the analysis is negative, then here is the actual percent workers fatigued (blank if task is acceptable):
       ${result.percentWorkersFatigued ? `${result.percentWorkersFatigued}% of female workers cannot perform the task` : "\n"}
+
       Additionally, here is a list of the metric contribution percentages for each task input:
       ${result.mcpValues.map((input) => `${input.name}: ${input.value}`).join("\n")}
-      Generate a response to the user based on the current chat history and the result of the analysis. 
-      If the task is deemed acceptable, then tell that to the user.
-      If the task is deemed not acceptable, then compare the needed percent of workers fatigued to the actual percent, list the task inputs alongside their respective mcp values.
-      
+
       `;
       assistantMessage = await chat(message, history, chatModel, systemPrompt);
     }
 
-    // console.log("AI MESSAGE:", assistantMessage);
+    if (phase === "CALC_DETAILS") {
+      systemPrompt = `
+      You are Ergo, a helpful ergonomics AI assistant.
+
+      You are being tasked with giving a detailed breakdown of the metric contribution analysis performed on the user's task.
+      Be sure to lsit each input variable and provide the metric contribution percentage for that variable.
+
+      Please generate the best response to the user's message based on the given chat history.
+
+      ---
+
+      Below is the relevant analysis results. Use only the information needed for the appropriate reply.
+
+      A description of the results of that analysis:
+      ${result.description}
+
+      If the result of the analysis is negative, then here is the actual percent workers fatigued (blank if task is acceptable):
+      ${result.percentWorkersFatigued ? `${result.percentWorkersFatigued}% of female workers cannot perform the task` : "\n"}
+
+      Additionally, here is a list of the metric contribution percentages for each task input:
+      ${result.mcpValues.map((input) => `${input.name}: ${input.value}`).join("\n")}
+      `;
+
+      assistantMessage = await chat(message, history, chatModel, systemPrompt);
+    }
+
+    if (phase === "TASK_SUMMARY") {
+    }
 
     return res.json({
       ok: true,

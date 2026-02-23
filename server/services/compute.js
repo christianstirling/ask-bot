@@ -134,7 +134,7 @@ export function determine_most_impactful_input(
   // 4.)
   if (initial_force <= acceptable_force) {
     return {
-      description: `The task meets the criteria for the 25% percentile of female workers; therefore, it is acceptable.`,
+      description: `The task can safely be performed by 75% or more of female workers; therefore, it is acceptable.`,
       mcpValues: [],
       percentWorkersFatigued: null,
     };
@@ -179,18 +179,18 @@ export function determine_most_impactful_input(
 
   // 8.)
   const arrayOfMcpValues = [
-    { name: "Hand height", value: round(vertical_mcp, 2) },
-    { name: "Distance", value: round(distance_horizontal_mcp, 2) },
-    { name: "Frequency", value: round(frequency_mcp, 2) },
-    { name: "Initial Force", value: round(force_mcp, 2) },
+    { name: "Hand height", value: round(vertical_mcp, 2) * 100 },
+    { name: "Distance", value: round(distance_horizontal_mcp, 2) * 100 },
+    { name: "Frequency", value: round(frequency_mcp, 2) * 100 },
+    { name: "Initial Force", value: round(force_mcp, 2) * 100 },
   ];
 
   arrayOfMcpValues.sort((a, b) => b.value - a.value);
 
   // 9.)
   return {
-    description: `The task did not meet the criteria for the 25% percentile of female workers; therefore, it is not acceptable. 
-    The most impactful task input for this job is ${name} with a metric contribution of ${round(value, 2)}`,
+    description: `The task cannot safely be performed by 75% of female workers; therefore, it is not acceptable. 
+    The most impactful task input for this job is ${name} with a metric contribution of ${round(value, 2) * 100} %.`,
     mcpValues: arrayOfMcpValues,
     percentWorkersFatigued: percent_workers_fatigued,
   };
