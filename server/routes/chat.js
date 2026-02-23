@@ -22,7 +22,6 @@ function getMissingIntakeFields(intake = {}) {
 }
 
 function moveToNextPhase(state, message) {
-  console.log("DecidePhase:", !state?.phase);
   if (!state?.phase) {
     return "INTRO";
   }
@@ -44,7 +43,11 @@ function moveToNextPhase(state, message) {
   }
 
   if (state.phase === "CALC_DETAILS") {
-    return "TASK_SUMMARY";
+    return "SUMMARY_PROMPT";
+  }
+
+  if (state.phase === "SUMMARY_PROMPT") {
+    return "SUMMARY_CAPTURE";
   }
 
   return state.phase;
@@ -73,8 +76,11 @@ router.post("/", async (req, res, next) => {
     if (!message || typeof message !== "string") {
       return res.status(400).json({ error: "message (string) is required" });
     }
+    console.log("Phase in: ", state.phase);
 
     const phase = moveToNextPhase(state, message);
+
+    console.log("Phase out: ", phase);
 
     let assistantMessage;
     // let systemPrompt;
@@ -189,7 +195,7 @@ router.post("/", async (req, res, next) => {
     }
 
     if (phase === "CALC_DETAILS") {
-      systemPrompt = `
+      const systemPrompt = `
       You are Ergo, a helpful ergonomics AI assistant.
 
       You are being tasked with giving a detailed breakdown of the metric contribution analysis performed on the user's task.
@@ -214,7 +220,38 @@ router.post("/", async (req, res, next) => {
       assistantMessage = await chat(message, history, chatModel, systemPrompt);
     }
 
-    if (phase === "TASK_SUMMARY") {
+    if (phase === "SUMMARY_PROMPT") {
+      const systemPrompt = `
+      You are Ergo, a helpful ergonomics AI assistant.
+
+      The user has just completed a metric analysis of their workplace task.
+      Your job is to ask the user to provide a brief description of the task in their own words.
+      This will help contextualize the solution suggestions that will follow.
+
+      Please prompt the user to describe what the task involves — for example, what object is being moved, 
+      where it is being moved to/from, and any other relevant context.
+
+      Keep your message friendly and concise.
+      `;
+
+      assistantMessage = await chat(message, history, chatModel, systemPrompt);
+    }
+
+    if (phase === "SUMMARY_CAPTURE") {
+      nextState = { ...nextState, taskDescription: message };
+
+      const systemPrompt = `
+      You are ergo, a helpful ergonomics AI assistant.
+
+      The user has just provided a description of their task to you.
+
+      Now that you have the task input, the metric analysis, and the task description, 
+      you should be ready to begin developing solutions to improve the task.
+
+      Please ask the user if they are ready to move on to solution development?
+      `;
+
+      assistantMessage = await chat(message, history, chatModel, systemPrompt);
     }
 
     return res.json({
