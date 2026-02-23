@@ -42,22 +42,20 @@ function normalizeChromaResult(raw) {
  */
 
 export async function retrieve({
-  question,
-  topK = 5,
-  where,
+  query,
+  topK = 10,
   minSimilarity,
   includeEmbeddings = false, // Do we need to return the embeddings from the vdb? Probably no.
 } = {}) {
-  if (typeof question !== "string" || !question.trim()) {
+  if (typeof query !== "string" || !query.trim()) {
     throw new Error("retrieve: question must be a non-empty string");
   }
 
-  const vector = await embedQuery(question);
+  const vector = await embedQuery(query);
 
   const raw = await queryCollection({
     queryEmbeddings: [vector],
     topK,
-    where,
     include: includeEmbeddings
       ? ["documents", "metadatas", "distances", "embeddings"]
       : ["documents", "metadatas", "distances"],

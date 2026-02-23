@@ -62,21 +62,15 @@ router.post("/retrieve", async (req, res, next) => {
 router.post("/", async (req, res, next) => {
   try {
     // a.)
-    const {
-      question,
-      history = [],
-      topK,
-      where,
-      returnSources = true,
-    } = req.body || {};
+    const { query, history = [], topK, returnSources = true } = req.body || {};
 
-    if (!question || typeof question !== "string") {
+    if (!query || typeof query !== "string") {
       return res.status(400).json({ error: "question (string) is required" });
     }
 
     // b.)
     const sources = await retrieve({
-      question,
+      query,
       topK: Number.isFinite(topK) ? topK : 5,
       where: where && typeof where === "object" ? where : undefined,
     });
@@ -102,7 +96,7 @@ router.post("/", async (req, res, next) => {
       `If the answer is not in the sources, say that you don't know.\n` +
       `Cite sources inline like: [SOURCE 1], [SOURCE 2]. \n\n` +
       `SOURCES:\n${context}\n\n` +
-      `QUESTION:\n${question}`;
+      `QUESTION:\n${query}`;
 
     const answer = await chat(ragMessage, history, chatModel);
 

@@ -50,6 +50,10 @@ function moveToNextPhase(state, message) {
     return "SUMMARY_CAPTURE";
   }
 
+  if (state.phase === "SUMMARY_CAPTURE") {
+    return "SOLVE";
+  }
+
   return state.phase;
 }
 
@@ -164,7 +168,8 @@ router.post("/", async (req, res, next) => {
         action,
       );
 
-      const systemPrompt = `You are Ergo, a helpful ergonomics AI assistant. 
+      const systemPrompt = `
+      You are Ergo, a helpful ergonomics AI assistant. 
 
       A metric analysis has been run on a set on data that the user has provided which describes a workplace task. 
 
@@ -175,6 +180,8 @@ router.post("/", async (req, res, next) => {
       tell the user what the most impactful input variable is.
 
       Next, ask the user if they would like more information about the analysis.
+
+      Do not do anything else beyond what has just been listed.
 
       ---
 
@@ -203,6 +210,10 @@ router.post("/", async (req, res, next) => {
 
       Please generate the best response to the user's message based on the given chat history.
 
+      Ask the user if they would like to generate some solutions to this specific task.
+
+      Keep the response friendly and concise! Do not provide any solutions to the user.
+
       ---
 
       Below is the relevant analysis results. Use only the information needed for the appropriate reply.
@@ -225,6 +236,7 @@ router.post("/", async (req, res, next) => {
       You are Ergo, a helpful ergonomics AI assistant.
 
       The user has just completed a metric analysis of their workplace task.
+
       Your job is to ask the user to provide a brief description of the task in their own words.
       This will help contextualize the solution suggestions that will follow.
 
@@ -245,13 +257,91 @@ router.post("/", async (req, res, next) => {
 
       The user has just provided a description of their task to you.
 
-      Now that you have the task input, the metric analysis, and the task description, 
-      you should be ready to begin developing solutions to improve the task.
+      Confirm that you have an accurate description of the task.
 
-      Please ask the user if they are ready to move on to solution development?
+      Ask the user if they are ready to move on to solution development?
+
+      Do not do anything besides 1. confirm the task description, and 
+      2. ask the user if they want to begin solution development.
+
+      Do not generate any solutions for the user.
       `;
 
       assistantMessage = await chat(message, history, chatModel, systemPrompt);
+    }
+
+    if (phase === "SOLVE") {
+      const {
+        handHeight,
+        distance,
+        frequency,
+        initialForce,
+        // sustainedForce,
+        action,
+      } = state.intake;
+
+      const query = `
+      Task description:
+      ${state.taskDescription}
+
+      Task inputs:
+      Action -- ${action}
+      Initial Force -- ${initialForce}
+      Hand height -- ${handHeight}
+      Distance moved -- ${distance}
+      Frequency -- ${frequency}
+
+      Metric contribution:
+      ${result.mcpValues.map((input) => `${input.name}: ${input.value}`).join("\n")}
+      `;
+
+      const sources = await retrieve({
+        query,
+        topK: 15,
+      });
+
+      const context = sources
+        .map((s, i) => {
+          const title = s?.metadata?.title
+            ? ` | title=${s.metadata.title}`
+            : "";
+          const docId = s?.metadata?.docId
+            ? `docId=${s.metadata.docId}`
+            : "docId=?";
+          const chunkIndex =
+            typeof s?.metadata?.chunkIndex === "number"
+              ? `chunkIndex=${s.metadata.chunkIndex}`
+              : "chunkIndex=?";
+
+          return `SOURCE ${i + 1} (id=${s.id} ${docId} ${chunkIndex}${title})\n${s.content}`;
+        })
+        .join("\n\n");
+
+      console.log(context);
+
+      const systemPrompt = `
+      You are Ergo, a helpful ergonomics AI assistant.
+
+      You will be given a chat history and a message containing contextual information about the user's task and 
+      some relevant solutions.
+
+      Please write a list of 3 solutions that come straight from the context provided in the message 
+      and cite your sources for each solution.
+      `;
+      const ragMessage = `
+      TASK INFORMATION:
+      ${query}
+      
+      SOLUTION DATA:
+      ${context}
+      `;
+
+      assistantMessage = await chat(
+        ragMessage,
+        history,
+        chatModel,
+        systemPrompt,
+      );
     }
 
     return res.json({
