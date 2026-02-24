@@ -115,7 +115,6 @@ export function determine_most_impactful_input(
   const CV = 0.214;
   // P-value at the 25th percentile of female workers
   const Z_25TH_PERCENTILE = pValue[24];
-  console.log(Z_25TH_PERCENTILE);
 
   // 1.)
   const { V_SF, DH_SF, F_SF } = calculate_scale_factors(

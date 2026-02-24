@@ -8,6 +8,7 @@ import { retrieve } from "../services/retrieve.js";
 
 // const TOP_K = 10;
 let result;
+let context;
 
 function getMissingIntakeFields(intake = {}) {
   const required = [
@@ -54,6 +55,10 @@ function moveToNextPhase(state, message) {
     return "SOLVE";
   }
 
+  if (state.phase === "SOLVE") {
+    return "SOLUTION_DETAILS";
+  }
+
   return state.phase;
 }
 
@@ -80,11 +85,14 @@ router.post("/", async (req, res, next) => {
     if (!message || typeof message !== "string") {
       return res.status(400).json({ error: "message (string) is required" });
     }
-    console.log("Phase in: ", state.phase);
+
+    console.log("USER: ", message);
+
+    // console.log("Phase in: ", state.phase);
 
     const phase = moveToNextPhase(state, message);
 
-    console.log("Phase out: ", phase);
+    // console.log("Phase out: ", phase);
 
     let assistantMessage;
     // let systemPrompt;
@@ -171,12 +179,10 @@ router.post("/", async (req, res, next) => {
       const systemPrompt = `
       You are Ergo, a helpful ergonomics AI assistant. 
 
-      A metric analysis has been run on a set on data that the user has provided which describes a workplace task. 
+      A metric analysis has been run on a set on data that the user has provided which describes a workplace task.  
 
-      Generate a response to the user based on the current chat history and the result of the analysis. 
-
-      If the task is deemed acceptable, then tell that to the user.
-      If the task is deemed not acceptable, then compare the needed percent of workers fatigued to the actual percent and 
+      If the task is deemed acceptable, then tell that to the user; if the task is deemed not acceptable, 
+      then compare the needed percent of workers fatigued to the actual percent and 
       tell the user what the most impactful input variable is.
 
       Next, ask the user if they would like more information about the analysis.
@@ -206,9 +212,8 @@ router.post("/", async (req, res, next) => {
       You are Ergo, a helpful ergonomics AI assistant.
 
       You are being tasked with giving a detailed breakdown of the metric contribution analysis performed on the user's task.
-      Be sure to lsit each input variable and provide the metric contribution percentage for that variable.
 
-      Please generate the best response to the user's message based on the given chat history.
+      Be sure to list each input variable and provide the metric contribution percentage for that variable.
 
       Ask the user if they would like to generate some solutions to this specific task.
 
@@ -235,7 +240,10 @@ router.post("/", async (req, res, next) => {
       const systemPrompt = `
       You are Ergo, a helpful ergonomics AI assistant.
 
-      The user has just completed a metric analysis of their workplace task.
+      The user has just completed a metric analysis of their workplace task and has stated that they want to 
+      begin solution development.
+
+      Do not provide any solutions to the user now.
 
       Your job is to ask the user to provide a brief description of the task in their own words.
       This will help contextualize the solution suggestions that will follow.
@@ -244,6 +252,8 @@ router.post("/", async (req, res, next) => {
       where it is being moved to/from, and any other relevant context.
 
       Keep your message friendly and concise.
+
+      Do not provide any solutions to the user at this time.
       `;
 
       assistantMessage = await chat(message, history, chatModel, systemPrompt);
@@ -253,7 +263,7 @@ router.post("/", async (req, res, next) => {
       nextState = { ...nextState, taskDescription: message };
 
       const systemPrompt = `
-      You are ergo, a helpful ergonomics AI assistant.
+      You are Ergo, a helpful ergonomics AI assistant.
 
       The user has just provided a description of their task to you.
 
@@ -300,7 +310,7 @@ router.post("/", async (req, res, next) => {
         topK: 15,
       });
 
-      const context = sources
+      context = sources
         .map((s, i) => {
           const title = s?.metadata?.title
             ? ` | title=${s.metadata.title}`
@@ -317,7 +327,7 @@ router.post("/", async (req, res, next) => {
         })
         .join("\n\n");
 
-      console.log(context);
+      // console.log(context);
 
       const systemPrompt = `
       You are Ergo, a helpful ergonomics AI assistant.
@@ -343,6 +353,27 @@ router.post("/", async (req, res, next) => {
         systemPrompt,
       );
     }
+
+    if (phase === "SOLUTION_DETAILS") {
+      const systemPrompt = `
+      You are Ergo, a helpful ergonomics AI assistant.
+
+      3 solutions have been presented to the user, which are contained in the chat history.
+
+      Here is the context data from the database where the solutions were found:
+      ${context}
+
+      In the latest user message, the user is going to ask a question about one or more of those solutions.
+
+      Please answer the user's question and do nothing else.
+
+      Keep your response concise and helpful.
+      `;
+
+      assistantMessage = await chat(message, history, chatModel, systemPrompt);
+    }
+
+    console.log("AI: ", assistantMessage);
 
     return res.json({
       ok: true,
