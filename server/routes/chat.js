@@ -95,7 +95,6 @@ router.post("/", async (req, res, next) => {
     // console.log("Phase out: ", phase);
 
     let assistantMessage;
-    // let systemPrompt;
 
     let nextState = { ...state, phase };
 

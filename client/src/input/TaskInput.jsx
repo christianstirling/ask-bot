@@ -9,22 +9,22 @@ const FIELD_RULES = {
     hint: "Must be between 0 and 500 kg-force",
   },
   handHeight: {
-    min: 0,
-    max: 2.5,
+    min: 0.53,
+    max: 1.33,
     label: "Hand height",
-    hint: "Must be between 0 and 2.5 meters",
+    hint: "Must be between 0.53 and 1.33 meters",
   },
   distance: {
-    min: 0.1,
-    max: 100,
+    min: 2.1,
+    max: 61,
     label: "Distance",
-    hint: "Must be between 0.1 and 100 meters",
+    hint: "Must be between 2.1 and 61 meters",
   },
   frequency: {
-    min: 0.1,
-    max: 60,
+    min: 0.0021,
+    max: 10,
     label: "Frequency",
-    hint: "Must be between 0.1 and 60 per minute",
+    hint: "Must be between 0.0021 and 10 per minute",
   },
 };
 
@@ -199,7 +199,7 @@ export default function TaskInput({ onSend }) {
               onBlur={handleBlur}
               min={FIELD_RULES.handHeight.min}
               max={FIELD_RULES.handHeight.max}
-              step="0.01"
+              step="0.001"
               aria-describedby={
                 showError("handHeight") ? "handHeight-error" : undefined
               }
@@ -222,7 +222,7 @@ export default function TaskInput({ onSend }) {
               onBlur={handleBlur}
               min={FIELD_RULES.distance.min}
               max={FIELD_RULES.distance.max}
-              step="0.1"
+              step="0.01"
               aria-describedby={
                 showError("distance") ? "distance-error" : undefined
               }
@@ -245,7 +245,7 @@ export default function TaskInput({ onSend }) {
               onBlur={handleBlur}
               min={FIELD_RULES.frequency.min}
               max={FIELD_RULES.frequency.max}
-              step="0.1"
+              step="0.00001"
               aria-describedby={
                 showError("frequency") ? "frequency-error" : undefined
               }
