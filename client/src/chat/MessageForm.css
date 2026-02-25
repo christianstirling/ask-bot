@@ -7,18 +7,30 @@
     width: 100%;
     /* border: 1px red solid; */
 
-    margin-bottom: 10px;
+    margin-bottom: 5px;
 
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 5px;  
-    margin-right: 5px;
     
 }
 
-.message_input {
+.form-left {
+    width: 10%;
     margin-left: 5px;
+}
+
+.form-right {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+
+    width: 90%;
+    margin-right: 10px;
+}
+
+.message_input {
     padding: 5px;
     width: 75%;
     border-radius: 5px;
@@ -31,7 +43,6 @@
 }
 
 .message_submit {
-    margin-right: 5px;
     width: auto;
     flex-grow: 1;
     border-radius: 5px;
@@ -39,6 +50,8 @@
 
     background-color: black;
     border: 1px solid lightgray;
+
+    padding: 0px 10px;
 }
 
 .message_submit:hover {
