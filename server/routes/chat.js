@@ -200,6 +200,7 @@ router.post("/", async (req, res, next) => {
       calculations, and then suggest relevant solutions based on that data.
       The user has begun to provide their task inputs, but you are missing one or more values. Please prompt the user 
       to provide the missing values.
+      
       `;
       assistantMessage = await chat(message, history, chatModel, systemPrompt);
 

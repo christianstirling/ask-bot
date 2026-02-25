@@ -34,12 +34,12 @@
     padding: 5px;
     width: 75%;
     border-radius: 5px;
-    border: 1px solid lightgray;
+    border: none;
 }
 
 .message_input:focus {
     outline: none;
-    border-color: rgb(0, 152, 203);
+    border: 0.5px solid lightgray;
 }
 
 .message_submit {
@@ -49,13 +49,14 @@
     height: 30px;
 
     background-color: black;
-    border: 1px solid lightgray;
+    
 
     padding: 0px 10px;
 }
 
 .message_submit:hover {
-    border-color: rgb(0, 152, 203);
+    /* border-color: rgb(0, 152, 203); */
+    border: 0.5px solid lightgray;
 }
 
 

@@ -35,7 +35,7 @@ const openaiEmbeddingsModel = new OpenAIEmbeddings({
   model: env.EMBEDDING_MODEL,
 });
 
-export const chatModel = anthropicChatModel;
+export const chatModel = openaiChatModel;
 
 export const embeddingsModel = openaiEmbeddingsModel;
 

@@ -19,8 +19,8 @@
 
 .MessageBubble {
 
-    border-radius: 25px;
-    border: 1px solid lightgray;
+    border-radius: 10px;
+    /* border: 1px solid #272727; */
 
     width: auto;
     max-width: 80%;
