@@ -26,7 +26,7 @@ function coerceHistory(history) {
 const prompt = ChatPromptTemplate.fromMessages([
   ["system", "{systemMessage}"],
   new MessagesPlaceholder("history"),
-  ["user", "{userMessage}"],
+  ["user", "Latest user message: {userMessage}"],
 ]);
 
 // chat function -- called in openai router

@@ -62,20 +62,60 @@ function moveToNextPhase(state, message) {
   return state.phase;
 }
 
-function buildContextBlock(sources) {
-  return sources
-    .map((s, i) => {
-      const title = s?.metadata?.title ? ` | title=${s.metadata.title}` : "";
-      const docId = s?.metadata?.docId
-        ? `docId=${s.metadata.docId}`
-        : "docId=?";
-      const chunkIndex =
-        typeof s?.metadata?.chunkIndex === "number"
-          ? `chunkIndex=${s.metadata.chunkIndex}`
-          : "chunkIndex=?";
-      return `SOURCE ${i + 1} (id=${s.id} ${docId} ${chunkIndex}${title})\n${s.content}`;
-    })
-    .join("\n\n");
+async function decideNextPhase(state, message, history) {
+  const intakeStatus = state.intake
+    ? getMissingIntakeFields(state.intake)
+    : ["all fields missing"];
+
+  const systemPrompt = `
+    You are a routing agent for an ergonomics assistant app.
+    Your ONLY job is to decide which phase the conversation should be in next.
+    Respond with ONLY a single JSON object and nothing else.
+
+    ## Phases and their purposes:
+    - INTRO: User hasn't started a task analyis yet, or is asking general questions
+    - INTAKE: Task form data has been submitted but required fields are missing: ${intakeStatus.join(",")}
+    - CONFIRM_CALC: All intake fields are present, waiting for user to confirm they want analysis
+    - EXECUTE_CALC: User has confirmed they want the calculation run - select this phase once the user has assented to performing the calculations
+    - EXPLAIN_CALC: Calculation is done, user asked for more details about results
+    - ASK_DESCRIPTION: User wants to proceed to solutions - prompt them for a task description
+    - CONFIRM_SOLVE: User has provided their task description - need user to confirm that they would like to generate solutions
+    - SOLVE: User confirmed they're ready to generate solutions
+    - EXPLAIN_SOLN: Solutions have been shown, user is asking follow-up questions
+
+    ## Current state:
+    - Current phase: ${state.phase ?? none}
+    - Intake fields present: ${JSON.stringify(state.intake ?? {})}
+    - Missing intake fields: ${JSON.stringify(intakeStatus)}
+    - Task description capture: ${state.taskDescription ? "yes" : "no"}
+    - Calculation run: ${state.calcRun ? "yes" : "no"}
+    - Salutions shown: ${state.solutionsShown ? "yes" : "no"}
+
+    ## Rules:
+    1. Never skip phases - respect the flow
+    2. INTAKE can only advance to CONFIRM_CALC if ALL intake fields are present
+    3. Only move to SOLVE if a task description has been captured
+    4. If user seems confused or off-topic, stay in the current phase
+    5. EXPLAIN_SOLN is a terminal loop - stay there unless a new task is started
+
+    Respond with ONLY this JSON:
+    { "phase": "PHASE_NAME", "reasoning": "one sentence explanation" }
+    `;
+
+  const response = await chat(message, history, chatModel, systemPrompt);
+
+  try {
+    const parsed = JSON.parse(response);
+    console.log(
+      `decideNextPhase: agent decision: ${parsed.phase} - ${parsed.reasoning}`,
+    );
+    return parsed.phase;
+  } catch {
+    console.warn(
+      "decideNextPhase: agent returned invalid JSON, falling back to current phase",
+    );
+    return state.phase ?? "INTRO";
+  }
 }
 
 router.post("/", async (req, res, next) => {
@@ -86,11 +126,28 @@ router.post("/", async (req, res, next) => {
       return res.status(400).json({ error: "message (string) is required" });
     }
 
-    console.log("USER: ", message);
+    // console.log("USER: ", message);
 
     // console.log("Phase in: ", state.phase);
 
-    const phase = moveToNextPhase(state, message);
+    // const phase = moveToNextPhase(state, message);
+
+    const VALID_PHASES = [
+      "INTRO",
+      "INTAKE",
+      "CONFIRM_CALC",
+      "EXECUTE_CALC",
+      "EXPLAIN_CALC",
+      "ASK_DESCRIPTION",
+      "CONFIRM_SOLVE",
+      "SOLVE",
+      "EXPLAIN_SOLN",
+    ];
+
+    const agentPhase = await decideNextPhase(state, message, history);
+    const phase = VALID_PHASES.includes(agentPhase)
+      ? agentPhase
+      : (state.phase ?? "INTRO");
 
     // console.log("Phase out: ", phase);
 
@@ -99,6 +156,8 @@ router.post("/", async (req, res, next) => {
     let nextState = { ...state, phase };
 
     if (phase === "INTRO") {
+      console.log(`Router: executing phase "INTRO"`);
+
       const systemPrompt = `Assistant directions:
       
       You are Ergo, a helpful ergonomics AI assistant. 
@@ -132,6 +191,8 @@ router.post("/", async (req, res, next) => {
     }
 
     if (phase === "INTAKE") {
+      console.log(`Router: executing phase "INTAKE"`);
+
       const systemPrompt = `You are Ergo, a helpful ergonomics AI assistant. 
 
       Your job is to receive workplace task inputs from a user, perform a calculation using those values, 
@@ -141,9 +202,18 @@ router.post("/", async (req, res, next) => {
       to provide the missing values.
       `;
       assistantMessage = await chat(message, history, chatModel, systemPrompt);
+
+      nextState = {
+        ...nextState,
+        calcRun: false,
+        solutionsShown: false,
+        taskDescription: null, // worth resetting this too
+      };
     }
 
     if (phase === "CONFIRM_CALC") {
+      console.log(`Router: executing phase "CONFIRM_CALC"`);
+
       const systemPrompt = `You are Ergo, a helpful ergonomics AI assistant. 
       You have just received all of the necessary input variables to be able to perform an ergonomic analysis on 
       the user's workplace task. Please confirm that the user is ready to begin the analysis.
@@ -151,7 +221,9 @@ router.post("/", async (req, res, next) => {
       assistantMessage = await chat(message, history, chatModel, systemPrompt);
     }
 
-    if (phase === "CALC") {
+    if (phase === "EXECUTE_CALC") {
+      console.log(`Router: executing phase "EXECUTE_CALC"`);
+
       // Begin compute pipeline
       // Return results
       // Put results in the system prompt
@@ -204,9 +276,13 @@ router.post("/", async (req, res, next) => {
 
       `;
       assistantMessage = await chat(message, history, chatModel, systemPrompt);
+
+      nextState = { ...nextState, phase, calcRun: true };
     }
 
-    if (phase === "CALC_DETAILS") {
+    if (phase === "EXPLAIN_CALC") {
+      console.log(`Router: executing phase "EXPLAIN_CALC"`);
+
       const systemPrompt = `
       You are Ergo, a helpful ergonomics AI assistant.
 
@@ -235,7 +311,9 @@ router.post("/", async (req, res, next) => {
       assistantMessage = await chat(message, history, chatModel, systemPrompt);
     }
 
-    if (phase === "SUMMARY_PROMPT") {
+    if (phase === "ASK_DESCRIPTION") {
+      console.log(`Router: executing phase "ASK_DESCRIPTION"`);
+
       const systemPrompt = `
       You are Ergo, a helpful ergonomics AI assistant.
 
@@ -258,7 +336,9 @@ router.post("/", async (req, res, next) => {
       assistantMessage = await chat(message, history, chatModel, systemPrompt);
     }
 
-    if (phase === "SUMMARY_CAPTURE") {
+    if (phase === "CONFIRM_SOLVE") {
+      console.log(`Router: executing phase "CONFIRM_SOLVE"`);
+
       nextState = { ...nextState, taskDescription: message };
 
       const systemPrompt = `
@@ -280,6 +360,8 @@ router.post("/", async (req, res, next) => {
     }
 
     if (phase === "SOLVE") {
+      console.log(`Router: executing phase "SOLVE"`);
+
       const {
         handHeight,
         distance,
@@ -351,9 +433,13 @@ router.post("/", async (req, res, next) => {
         chatModel,
         systemPrompt,
       );
+
+      nextState = { ...nextState, phase, solutionsShown: true };
     }
 
-    if (phase === "SOLUTION_DETAILS") {
+    if (phase === "EXPLAIN_SOLN") {
+      console.log(`Router: executing phase "EXPLAIN_SOLN"`);
+
       const systemPrompt = `
       You are Ergo, a helpful ergonomics AI assistant.
 
@@ -372,7 +458,7 @@ router.post("/", async (req, res, next) => {
       assistantMessage = await chat(message, history, chatModel, systemPrompt);
     }
 
-    console.log("AI: ", assistantMessage);
+    // console.log("AI: ", assistantMessage);
 
     return res.json({
       ok: true,
