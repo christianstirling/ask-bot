@@ -128,36 +128,45 @@ export default function TaskInput({ onSend }) {
         <fieldset className="input-list">
           <legend className="input-legend">Task Input</legend>
           <div className="input-item">
-            Type of action being performed
-            <label htmlFor="">
-              <input
-                type="radio"
-                name="action"
-                value="push"
-                checked={form.action === "push"}
-                onChange={handleChange}
-              />
-              Push
-            </label>
-            <label htmlFor="">
-              <input
-                type="radio"
-                name="action"
-                value="pull"
-                checked={form.action === "pull"}
-                onChange={handleChange}
-              />
-              Pull
-            </label>
+            <h2 className="input-label">Type of action being performed</h2>
+
+            <div className="input-box">
+              <label htmlFor="">
+                <input
+                  type="radio"
+                  name="action"
+                  value="push"
+                  checked={form.action === "push"}
+                  onChange={handleChange}
+                />
+                Push
+              </label>
+              <label htmlFor="">
+                <input
+                  type="radio"
+                  name="action"
+                  value="pull"
+                  checked={form.action === "pull"}
+                  onChange={handleChange}
+                />
+                Pull
+              </label>
+            </div>
           </div>
-          {submitAttempted && errors.action && (
-            <span className="field-error">{errors.action}</span>
-          )}
+          <div className="error-item">
+            {submitAttempted && errors.action && (
+              <span className="field-error">{errors.action}</span>
+            )}
+          </div>
 
           <label className="input-item">
-            Force needed to start moving the object (in kg-force)
+            <h2 className="input-label">
+              Force needed to start moving the object (in kg-force)
+            </h2>
+
             <input
               type="number"
+              className="input-box"
               name="initialForce"
               value={form.initialForce}
               onChange={handleChange}
@@ -170,11 +179,13 @@ export default function TaskInput({ onSend }) {
               aria-invalid={!!showError("initialForce")}
             />
           </label>
-          {showError("initialForce") && (
-            <span className="field-error" id="initialForce-error">
-              {errors.initialForce}
-            </span>
-          )}
+          <div className="error-item">
+            {showError("initialForce") && (
+              <span className="field-error" id="initialForce-error">
+                {errors.initialForce}
+              </span>
+            )}
+          </div>
 
           {/* <label className="input-item">
             Force needed to keep the object moving (in kg-force)
@@ -190,9 +201,12 @@ export default function TaskInput({ onSend }) {
           )} */}
 
           <label htmlFor="" className="input-item">
-            Vertical height of the hands above the floor (in meters)
+            <h2 className="input-label">
+              Vertical height of the hands above the floor (in meters)
+            </h2>
             <input
               type="number"
+              className="input-box"
               name="handHeight"
               value={form.handHeight}
               onChange={handleChange}
@@ -206,16 +220,22 @@ export default function TaskInput({ onSend }) {
               aria-invalid={!!showError("handHeight")}
             />
           </label>
-          {showError("handHeight") && (
-            <span className="field-error" id="handHeight-error">
-              {errors.handHeight}
-            </span>
-          )}
+          <div className="error-item">
+            {showError("handHeight") && (
+              <span className="field-error" id="handHeight-error">
+                {errors.handHeight}
+              </span>
+            )}
+          </div>
 
           <label htmlFor="" className="input-item">
-            Horizontal distance that the object is moved (in meters)
+            <h2 className="input-label">
+              Horizontal distance that the object is moved (in meters)
+            </h2>
+
             <input
               type="number"
+              className="input-box"
               name="distance"
               value={form.distance}
               onChange={handleChange}
@@ -229,16 +249,21 @@ export default function TaskInput({ onSend }) {
               aria-invalid={!!showError("distance")}
             />
           </label>
-          {showError("distance") && (
-            <span className="field-error" id="distance-error">
-              {errors.distance}
-            </span>
-          )}
+          <div className="error-item">
+            {showError("distance") && (
+              <span className="field-error" id="distance-error">
+                {errors.distance}
+              </span>
+            )}
+          </div>
 
           <label htmlFor="" className="input-item">
-            Frequency (number of times the task is performed per minute)
+            <h2 className="input-label">
+              Frequency (number of times the task is performed per minute)
+            </h2>
             <input
               type="number"
+              className="input-box"
               name="frequency"
               value={form.frequency}
               onChange={handleChange}
@@ -252,11 +277,13 @@ export default function TaskInput({ onSend }) {
               aria-invalid={!!showError("frequency")}
             />
           </label>
-          {showError("frequency") && (
-            <span className="field-error" id="frequency-error">
-              {errors.frequency}
-            </span>
-          )}
+          <div className="error-item">
+            {showError("frequency") && (
+              <span className="field-error" id="frequency-error">
+                {errors.frequency}
+              </span>
+            )}
+          </div>
         </fieldset>
         <div className="button-container">
           <button type="button" onClick={handleClear} className="input-button">

@@ -36,9 +36,25 @@
     /* border: 1px solid green; */
     text-align: left;
     display: flex;
+    justify-content: space-between;
     flex-direction: row;
     gap: 10px;
 }
+
+.input-label {
+    font-size: 16px;
+    font-weight: normal;
+    margin: 0;
+    width: 70%;
+}
+
+.input-box {
+    width: 80px;
+    /* border: 1px red solid; */
+    display: flex;
+    flex-direction: column;
+}
+
 
 .input-button {
     width: 100px;
