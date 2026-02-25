@@ -211,12 +211,12 @@ export default function ChatContainer() {
 
   return (
     <div className="ChatContainer">
+      <TaskInput onSend={handleSendInput} />
       <Chat
         messages={messages}
         isLoading={isLoading}
         onSend={handleSendMessage}
       />
-      <TaskInput onSend={handleSendInput} />
     </div>
   );
 }
