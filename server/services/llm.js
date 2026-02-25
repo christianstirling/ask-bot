@@ -3,6 +3,7 @@
 // IMPORTS AND CONFIGURATION:
 
 import { ChatOpenAI, OpenAIEmbeddings } from "@langchain/openai";
+import { ChatAnthropic } from "@langchain/anthropic";
 import env from "../config/env.js";
 import {
   HumanMessage,
@@ -17,16 +18,26 @@ import {
  *    any of the app's pipelines.
  */
 
-export const chatModel = new ChatOpenAI({
+const openaiChatModel = new ChatOpenAI({
   apiKey: env.OPENAI_API_KEY,
   model: env.CHAT_MODEL,
   temperature: 0.2,
 });
 
-export const embeddingsModel = new OpenAIEmbeddings({
+const anthropicChatModel = new ChatAnthropic({
+  apiKey: env.ANTHROPIC_API_KEY,
+  model: env.ANTHROPIC_MODEL,
+  temperature: 0.2,
+});
+
+const openaiEmbeddingsModel = new OpenAIEmbeddings({
   apiKey: env.OPENAI_API_KEY,
   model: env.EMBEDDING_MODEL,
 });
+
+export const chatModel = anthropicChatModel;
+
+export const embeddingsModel = openaiEmbeddingsModel;
 
 // EMBEDDING FUNCTIONS:
 

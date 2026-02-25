@@ -11,8 +11,10 @@ function must(name) {
 
 const env = {
   OPENAI_API_KEY: must("OPENAI_API_KEY"),
+  ANTHROPIC_API_KEY: must("ANTHROPIC_API_KEY"),
 
-  CHAT_MODEL: process.env.CHAT_MODEL || "gpt-4.1-mini",
+  OPENAI_MODEL: process.env.OPENAI_MODEL || "gpt-4.1-mini",
+  ANTHROPIC_MODEL: process.env.ANTHROPIC_MODEL || "claude-sonnet-4-5",
   EMBEDDING_MODEL: process.env.EMBEDDING_MODEL || "text-embedding-3-small",
 
   CHROMA_URL: must("CHROMA_URL"),

@@ -14,8 +14,6 @@ app.use(
 
 app.use(express.json());
 
-import openaiRouter from "./routes/openai.js";
-
 import chatRouter from "./routes/chat.js";
 app.use("/api/chat", chatRouter);
 
