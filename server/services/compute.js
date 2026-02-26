@@ -126,9 +126,15 @@ export function determine_most_impactful_input(
   // 2.)
   const max_acceptable_value = RL * V_SF * DH_SF * F_SF;
 
+  console.log("Compute: max acceptable value --", max_acceptable_value);
+
   // 3.)
   const acceptable_force =
     max_acceptable_value + Z_25TH_PERCENTILE * max_acceptable_value * CV;
+
+  console.log("Compute: acceptable force --", acceptable_force);
+
+  console.log("Compute: initial force value entered --", initial_force);
 
   // 4.)
   if (initial_force <= acceptable_force) {
@@ -141,7 +147,10 @@ export function determine_most_impactful_input(
 
   const actual_p_value =
     (initial_force - max_acceptable_value) / (max_acceptable_value * CV);
+
+  console.log("Compute: p value --", actual_p_value);
   const actual_p_index = pValue.findIndex((p) => p >= actual_p_value);
+  console.log("Compute: p-index --", actual_p_index);
   let percent_workers_fatigued;
 
   if (actual_p_index === -1) {
@@ -149,6 +158,8 @@ export function determine_most_impactful_input(
   } else {
     percent_workers_fatigued = actual_p_index + 1;
   }
+
+  console.log("Compute: percent workers fatigued --", percent_workers_fatigued);
   // 5.)
   const {
     vertical_contribution,

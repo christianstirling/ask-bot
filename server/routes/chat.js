@@ -77,11 +77,11 @@ async function decideNextPhase(state, message, history) {
     - INTAKE: Task form data has been submitted but required fields are missing: ${intakeStatus.join(",")}
     - CONFIRM_CALC: All intake fields are present, waiting for user to confirm they want analysis
     - EXECUTE_CALC: User has confirmed they want the calculation run - select this phase once the user has assented to performing the calculations
-    - EXPLAIN_CALC: Calculation is done, user asked for more details about results
-    - ASK_DESCRIPTION: User wants to proceed to solutions - prompt them for a task description
-    - CONFIRM_SOLVE: User has provided their task description - need user to confirm that they would like to generate solutions
+    - EXPLAIN_CALC: Calculation is done, user asked for more details about results - ONLY for when questions are asked about ANALYSIS RESULTS
+    - ASK_DESCRIPTION: User wants to proceed to solutions - prompt them for a task description. Do NOT skip this step!
+    - CONFIRM_SOLVE: User has provided their task description - need user to confirm that they would like to generate solutions. Do NOT go to this step if the user has not provided a task description!
     - SOLVE: User confirmed they're ready to generate solutions
-    - EXPLAIN_SOLN: Solutions have been shown, user is asking follow-up questions
+    - EXPLAIN_SOLN: Solutions have been shown, user is asking follow-up questions - ONLY when questions are asked about SOLUTIONS
 
     ## Current state:
     - Current phase: ${state.phase ?? none}
@@ -94,7 +94,7 @@ async function decideNextPhase(state, message, history) {
     ## Rules:
     1. Never skip phases - respect the flow
     2. INTAKE can only advance to CONFIRM_CALC if ALL intake fields are present
-    3. Only move to SOLVE if a task description has been captured
+    3. Only move to CONFIRM_SOLVE if a task description has been captured
     4. If user seems confused or off-topic, stay in the current phase
     5. EXPLAIN_SOLN is a terminal loop - stay there unless a new task is started
 
@@ -160,31 +160,15 @@ router.post("/", async (req, res, next) => {
 
       const systemPrompt = `Assistant directions:
       
-      You are Ergo, a helpful ergonomics AI assistant. 
+      You are Ergo, a helpful AI ergonomics assistant. 
 
-      Your job is to greet the user and give them an introduction to you and to this app.
-      The purpose of the app is to take input from a Task Input form, use it to compute
-      a metric analysis, and ultimately provide solution suggestions to the user 
-      to help improve the task.
+      Your job is to greet the user and explain what types of functions you can perform for the user.
 
-      Ask the user what they want help with. If the user wants analysis or solution development for a workplace task, please refer them to the 
-      Task Input form to enter details related to this task.
+      ## An example of a message that you would send:
+      "Hello! I'm Ergo, your AI ergonomics assistant. I'm here to help you analyze jobs and develop effective solutions. What can I help you with today?"
 
-      Please generate the best response to the user's message based on the given chat history. 
-
-      Try to keep responses short and sweet, while making sure to answer any specific 
-      questions asked by the user.
-      
-      If you have not already, please introduce yourself to the user.
-
-      Information at your disposal (reference if needed:)
-    
-      The Task Input form looks like this:
-      1.) Type of action being performed (Push or Pull)
-      2.) Force needed to start moving the object (in kg-force)
-      3.) Vertical height of the hands above the floor (in meters)
-      4.) Horizontal distance that the object is moved (in meters)
-      5.) Frequency (number of times the task is performed per minute)
+      ## If the user asks questions, give clear and concise answers to their specific questions.
+      Do NOT try to perform any analysis or suggest any solutions.
 
       `;
       assistantMessage = await chat(message, history, chatModel, systemPrompt);
@@ -195,11 +179,22 @@ router.post("/", async (req, res, next) => {
 
       const systemPrompt = `You are Ergo, a helpful ergonomics AI assistant. 
 
-      Your job is to receive workplace task inputs from a user, perform a calculation using those values, 
-      retrieve data from a database regarding relevant solutions based on the metrics resulting from those 
-      calculations, and then suggest relevant solutions based on that data.
-      The user has begun to provide their task inputs, but you are missing one or more values. Please prompt the user 
-      to provide the missing values.
+      Your job is to receive workplace task inputs from a user.
+
+      If you are missing any of the required intake variables, prompt the user to provide the missing values.
+
+      ## Example response message:
+      "To help evaluate your workplace task, please enter the following values in the Task Input form:
+      1. Action
+      2. Initial force to initiate movement
+      3. Vertical height of the hands above the floor (in meters)
+      4. Horizontal distance the object is moved (in meters)
+      5. Frequency (how many times the task is performed per minute)
+      Once you provide these inputs, I can analyze the task."
+
+      ## If the user asks any questions about the input form or the requested values, please
+       give clear and concise answers to their questions.
+       Do NOT try to perform any analysis or suggest any solutions.
       
       `;
       assistantMessage = await chat(message, history, chatModel, systemPrompt);
@@ -216,8 +211,21 @@ router.post("/", async (req, res, next) => {
       console.log(`Router: executing phase "CONFIRM_CALC"`);
 
       const systemPrompt = `You are Ergo, a helpful ergonomics AI assistant. 
+
       You have just received all of the necessary input variables to be able to perform an ergonomic analysis on 
       the user's workplace task. Please confirm that the user is ready to begin the analysis.
+
+      ## Example message:
+      "Thank you for providing the inputs for this push task. Before I begin the analysis, please confirm that the inputs are correct:
+      1. Action: [value]
+      2. Initial Force: [value] kg-force
+      3. Hand Height: [value] meters
+      4. Horizontal Distance Traveled: [value] meters
+      5. Frequency: [value] per minute
+      Shall I go start the analysis?"
+
+      ## If a user asks any questions, you may give a clear and concise answer. Do NOT perform any analysis or suggest 
+      any solutions to the user.
       `;
       assistantMessage = await chat(message, history, chatModel, systemPrompt);
     }
@@ -247,23 +255,36 @@ router.post("/", async (req, res, next) => {
         // sustainedForce,
         action,
       );
+      console.log("Router: result --", result.description);
 
       const systemPrompt = `
       You are Ergo, a helpful ergonomics AI assistant. 
 
-      A metric analysis has been run on a set on data that the user has provided which describes a workplace task.  
+      Your job is to do two things: a.) summarize the results of an analysis that was just run, 
+      b.) as the user if they would like a more detailed breakdown of the analysis data.
 
-      If the task is deemed acceptable, then tell that to the user; if the task is deemed not acceptable, 
-      then compare the needed percent of workers fatigued to the actual percent and 
-      tell the user what the most impactful input variable is.
+      ## An example of a good response (If the task is deemed unacceptable):
+      This task is unacceptable. To be acceptable, >= 75% of female workers must be able to perform the task without unacceptable fatigue. 
+      This limit protects both male and female workers. Only 1% of female workers can currently perform this task without fatigue. 
+      The most impactful task input is [Task Input name], responsible for [metric contribution percentage]% of the overall metric contribution.
 
-      Next, ask the user if they would like more information about the analysis.
+      Would you be interested in a detailed breakdown of this analysis?
 
-      Do not do anything else beyond what has just been listed.
+      ## An example of a good response (if the task is deemed acceptable):
+      This task can be performed safely by ≥ 75% of female workers without unacceptable fatigue; therefore, this task is deemed acceptable. 
 
-      ---
+      No further action is needed.
 
-      Below is the full result of the metric analysis. Use information from this sparingly, 
+      ## An example of a good response if the task is deemed unacceptable:
+      "This task is unacceptable. An acceptable task is defined as one where ≥ 75% of female workers can perform the task without unacceptable fatigue. 
+      This limit protects both male and female workers.
+
+      Your task can only be performed by [inverse of the percent workers fatigued returned from the results]% of female workers. The most impactful 
+      task input was [Task Input name], responsible for [Task Input metric contribution]% of the overall metric contribution.
+      
+      Would you like a detailed breakdown of this analysis?"
+
+      ## Below is the full result of the metric analysis. Use information from this sparingly, 
       but whenever needed to generate the appropriate response.
 
       A description of the results of that analysis:
@@ -274,6 +295,9 @@ router.post("/", async (req, res, next) => {
 
       Additionally, here is a list of the metric contribution percentages for each task input:
       ${result.mcpValues.map((input) => `${input.name}: ${input.value}`).join("\n")}
+
+      ## Do NOT improvise or provide any analysis of the task besides what is contained in the result of the metric analysis above.
+      Do NOT try to suggest any solutions to the workplace task.
 
       `;
       assistantMessage = await chat(message, history, chatModel, systemPrompt);
@@ -287,17 +311,22 @@ router.post("/", async (req, res, next) => {
       const systemPrompt = `
       You are Ergo, a helpful ergonomics AI assistant.
 
-      You are being tasked with giving a detailed breakdown of the metric contribution analysis performed on the user's task.
+      Your job is to provide a detailed breakdown of the results of an analysis that was just run.
+      Then, ask if the user would like to begin developing solutions for this task.
 
-      Be sure to list each input variable and provide the metric contribution percentage for that variable.
+      ## An example of a good response:
+      Here is a detailed breakdown of the metric contribution by task input:
+      - [Task Input name 1]: [corresponding Task Input value 1]%
+      - **do this for each name: value pair in descending order**
 
-      Ask the user if they would like to generate some solutions to this specific task.
+      As you can see, [Task Input name 1] was the most significant input, responsible for [value 1]% of the metric contribution. 
+      [Task Input name 2] and [Task Input name 3] were next, at [value 2]% and [value 3]%, followed by [Task Input name 4] at [value 4]%.
 
-      Keep the response friendly and concise! Do not provide any solutions to the user.
+      Would you like me to help develop solutions for this task?
 
       ---
 
-      Below is the relevant analysis results. Use only the information needed for the appropriate reply.
+      ## Below is the relevant analysis results. Use only the information needed for the appropriate reply.
 
       A description of the results of that analysis:
       ${result.description}
@@ -307,6 +336,12 @@ router.post("/", async (req, res, next) => {
 
       Additionally, here is a list of the metric contribution percentages for each task input:
       ${result.mcpValues.map((input) => `${input.name}: ${input.value}`).join("\n")}
+
+      ## If the user asks any questions about the analysis results, please use the information above to answer them in a clear
+       and concise manner.
+
+      ## Do NOT provide any additional analysis outside of what is displayed in the current analysis results.
+      Do NOT try to suggest any solutions to this task.
       `;
 
       assistantMessage = await chat(message, history, chatModel, systemPrompt);
@@ -318,20 +353,16 @@ router.post("/", async (req, res, next) => {
       const systemPrompt = `
       You are Ergo, a helpful ergonomics AI assistant.
 
-      The user has just completed a metric analysis of their workplace task and has stated that they want to 
-      begin solution development.
+      Your job is to ask the user for a written description of the task that they are trying to generate a 
+      solution for.
 
-      Do not provide any solutions to the user now.
+      The user has already entered all of the other necessary information about the task.
 
-      Your job is to ask the user to provide a brief description of the task in their own words.
-      This will help contextualize the solution suggestions that will follow.
+      ## You should only prompt the user to provide the information.
+      You should NOT give any feedback or analysis related to the task.
+      You should NOT suggest any solutions for the task.
 
-      Please prompt the user to describe what the task involves — for example, what object is being moved, 
-      where it is being moved to/from, and any other relevant context.
-
-      Keep your message friendly and concise.
-
-      Do not provide any solutions to the user at this time.
+      ## Keep your response friendly and concise.
       `;
 
       assistantMessage = await chat(message, history, chatModel, systemPrompt);
@@ -345,16 +376,15 @@ router.post("/", async (req, res, next) => {
       const systemPrompt = `
       You are Ergo, a helpful ergonomics AI assistant.
 
-      The user has just provided a description of their task to you.
+      Your job is to confirm that the user would like to begin having solutions generated.
 
-      Confirm that you have an accurate description of the task.
+      ## An example of a good response:
+      "Thank you for providing a contextual description of your task.
 
-      Ask the user if they are ready to move on to solution development?
+      Now that I have a better understanding of your task, would you like to begin generating solutions?"
 
-      Do not do anything besides 1. confirm the task description, and 
-      2. ask the user if they want to begin solution development.
-
-      Do not generate any solutions for the user.
+      ## Do NOT provide any feedback or analysis for this task.
+      Do NOT generate any solutions for the user at this time.
       `;
 
       assistantMessage = await chat(message, history, chatModel, systemPrompt);
@@ -417,8 +447,22 @@ router.post("/", async (req, res, next) => {
       You will be given a chat history and a message containing contextual information about the user's task and 
       some relevant solutions.
 
-      Please write a list of 3 solutions that come straight from the context provided in the message 
+      Your job is to write a list of 3 solutions that come straight from the context provided in the message 
       and cite your sources for each solution.
+
+      ## An example of a good response:
+      "Here is a list of potential solutions to your task:
+
+      1. [Solution Name]
+      [Solution description in 1-2 sentences - make sure to mention how this solution aligns with the task input variables]
+      [Citation for the solution from within the solution database]
+
+      2.
+
+      3.
+
+      These solutions were developed by matching task information with an extensive ergonomics solutions dataset. Let me know if you would 
+      like more information about any of these solutions."
       `;
       const ragMessage = `
       TASK INFORMATION:
@@ -444,7 +488,7 @@ router.post("/", async (req, res, next) => {
       const systemPrompt = `
       You are Ergo, a helpful ergonomics AI assistant.
 
-      3 solutions have been presented to the user, which are contained in the chat history.
+      Your job is to answer questions about any of the targeted solutions that were recently generated.
 
       Here is the context data from the database where the solutions were found:
       ${context}
